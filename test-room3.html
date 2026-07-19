@@ -1,4 +1,21 @@
-<!-- 🏠 房間群組：加入 alphaTest 與雙面渲染 -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+    </style>
+</head>
+<body>
+
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+            <!-- 🏠 房間群組：加入 alphaTest 與雙面渲染 -->
 <a-entity id="ar-room" scale="1 1 1" position="0 0 1">
     
     <!-- 1. 前景門 (關鍵：加上 alphaTest，讓透明部分真正鏤空) -->
