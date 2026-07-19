@@ -1,0 +1,34 @@
+<!-- 🏠 房間群組：加入 alphaTest 與雙面渲染 -->
+<a-entity id="ar-room" scale="1 1 1" position="0 0 1">
+    
+    <!-- 1. 前景門 (關鍵：加上 alphaTest，讓透明部分真正鏤空) -->
+    <a-image id="wall-door" src="assets/door.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="0 0 0" rotation="0 0 0" width="1" height="1"></a-image>
+    
+    <!-- 2. 天花板 -->
+    <a-image id="ceiling-base" src="assets/ceiling.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="0 0.5 -0.5" rotation="90 0 0" width="1" height="1"></a-image>
+    
+    <!-- 3. 地板 -->
+    <a-image id="floor-base" src="assets/floor.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="0 -0.5 -0.5" rotation="-90 0 0" width="1" height="1"></a-image>
+
+    <!-- 4. 左牆 -->
+    <a-image id="wall-window" src="assets/left_wall.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="-0.5 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
+
+    <!-- 5. 右牆 -->
+    <a-image id="wall-desk" src="assets/right_wall.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="0.5 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
+
+    <!-- 6. 背牆 -->
+    <a-image id="wall-fireplace" src="assets/back_wall.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="0 0 -1" rotation="0 0 0" width="1" height="1"></a-image>
+
+</a-entity>
