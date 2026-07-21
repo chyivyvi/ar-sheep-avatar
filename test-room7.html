@@ -173,25 +173,24 @@
             const targetLayer = document.getElementById(`feature-${type}`);
             targetLayer.setAttribute('src', imgSrc);
             targetLayer.setAttribute('visible', 'true');
-            
+    
             // 按鈕樣式切換
             const panel = document.getElementById(`panel-${type}`);
             panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
             btnEl.classList.add('selected');
 
-            // 讓小羊整個群組開心地跳一下
+            // 讓小羊整個群組開心地跳一下（修正座標，保持在原本位置 Z = 0.5 上下彈跳）
             const sheepGroup = document.getElementById('sheep-group');
             sheepGroup.removeAttribute('animation__happy'); 
-            
-            // 使用 setTimeout 確保動畫重置
+    
             setTimeout(() => {
                 sheepGroup.setAttribute('animation__happy', {
                     property: 'position',
-                    from: '0 -0.2 -0.5',
-                    to: '0 -0.15 -0.5', // 微微往上彈
+                    from: '0 0 0.5',    // 配合 HTML 的原本位置
+                    to: '0 0.08 0.5',   // 微微往上跳起 0.08，Z 軸保持 0.5 不變
                     dir: 'alternate',
-                    dur: 200, // 快速彈跳
-                    loop: 2, // 彈兩下
+                    dur: 180,           // 輕快的彈跳時間
+                    loop: 2,
                     easing: 'easeOutQuad'
                 });
             }, 10);
