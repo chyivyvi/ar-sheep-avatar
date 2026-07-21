@@ -98,52 +98,56 @@
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
-            <!-- 🏠 房間群組：加入 alphaTest 與雙面渲染 -->
+           <!-- 🏠 房間與家具總群組 (統一在這裡控制整個房間的縮放與位置) -->
 <a-entity id="ar-room" scale="1 1 1" position="0 0 1">
     
-    <!-- 1. 前景門 (關鍵：加上 alphaTest，讓透明部分真正鏤空) -->
-    <a-image id="wall-door" src="assets/door.png" 
-             material="alphaTest: 0.5; side: double" 
-             position="0 0.25 0" rotation="0 0 0" width="1" height="1.5"></a-image>
+    <!-- ============================== -->
+    <!-- 🧱 第一部分：房間基礎結構 (門、牆、地板、屋頂) -->
+    <!-- ============================== -->
+    <a-entity id="room-structure">
+        <!-- 1. 前景門 -->
+        <a-image id="wall-door" src="assets/door.png" material="alphaTest: 0.5; side: double" position="0 0.25 0" rotation="0 0 0" width="1" height="1.5"></a-image>
 
-    <!-- 2. 天花板/屋頂 -->
-    <a-image id="roof-left" src="assets/roof.png" material="alphaTest: 0.5; side: double" 
-             position="-0.25 0.75 -0.5" rotation="-45 -90 0" width="1.1" height="0.8"></a-image>
-    <a-image id="roof-right" src="assets/roof.png" material="alphaTest: 0.5; side: double" 
-             position="0.25 0.75 -0.5" rotation="-45 90 0" width="1.1" height="0.8"></a-image>
-    
-    <!-- 3. 地板 -->
-    <a-image id="floor-base" src="assets/floor.png" 
-             material="alphaTest: 0.5" 
-             position="0 -0.5 -0.5" rotation="-90 0 0" width="1" height="1"></a-image>
-     <a-image id="floor-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
-         position="0 -0.501 -0.5" rotation="90 0 0" width="1" height="1"></a-image>   
+        <!-- 2. 天花板/屋頂 -->
+        <a-image id="roof-left" src="assets/roof.png" material="alphaTest: 0.5; side: double" position="-0.25 0.75 -0.5" rotation="-45 -90 0" width="1.1" height="0.8"></a-image>
+        <a-image id="roof-right" src="assets/roof.png" material="alphaTest: 0.5; side: double" position="0.25 0.75 -0.5" rotation="-45 90 0" width="1.1" height="0.8"></a-image>
+        
+        <!-- 3. 地板 -->
+        <a-image id="floor-base" src="assets/floor.png" material="alphaTest: 0.5" position="0 -0.5 -0.5" rotation="-90 0 0" width="1" height="1"></a-image>
+        <a-image id="floor-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" position="0 -0.501 -0.5" rotation="90 0 0" width="1" height="1"></a-image>   
 
-    <!-- 4. 左牆 -->
-    <a-image id="left_wall" src="assets/left_wall.png" 
-             material="alphaTest: 0.5" 
-             position="-0.5 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
-    <a-image id="wall-left-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
-         position="-0.501 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
+        <!-- 4. 左牆 -->
+        <a-image id="left_wall" src="assets/left_wall.png" material="alphaTest: 0.5" position="-0.5 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
+        <a-image id="wall-left-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" position="-0.501 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
 
-    <!-- 5. 右牆 -->
-    <a-image id="right_wall" src="assets/right_wall.png" 
-             material="alphaTest: 0.5" 
-             position="0.5 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
-    <a-image id="wall-right-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
-         position="0.501 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
+        <!-- 5. 右牆 -->
+        <a-image id="right_wall" src="assets/right_wall.png" material="alphaTest: 0.5" position="0.5 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
+        <a-image id="wall-right-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" position="0.501 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
 
-    <!-- 6. 背牆 -->
-    <a-image id="back_wall" src="assets/back_wall.png" 
-             material="alphaTest: 0.5; side: double" 
-             position="0 0.25 -1" rotation="0 0 0" width="1" height="1.5"></a-image>
+        <!-- 6. 背牆 -->
+        <a-image id="back_wall" src="assets/back_wall.png" material="alphaTest: 0.5; side: double" position="0 0.25 -1" rotation="0 0 0" width="1" height="1.5"></a-image>
+    </a-entity>
 
-     <!-- 7. 家具 -->
-     <a-image id="lamp" src="assets/lamp.png" 
-              material="alphaTest: 0.5; side: double" 
-              position="0 0.5 -0.5" width="1" height="1">
-     </a-image>
-    
+    <!-- ============================== -->
+    <!-- 🛋️ 第二部分：室內家具群組 (燈、時鐘、盆栽、桌子) -->
+    <!-- 💡 空間深度提示：前景門是 0，背牆是 -1 -->
+    <!-- ============================== -->
+    <a-entity id="furniture-group">
+        
+        <!-- 原本的吊燈 (Z: -0.5，懸掛在房間正中間) -->
+        <a-image id="lamp" src="assets/lamp.png" material="alphaTest: 0.5; side: double" position="0 0.5 -0.5" width="1" height="1"></a-image>
+
+        <!-- 掛在背牆的時鐘 (Z: -0.99，比背牆稍微往前 0.01，避免兩張圖疊在一起產生閃爍破圖) -->
+        <a-image id="wall-clock" src="assets/clock.png" material="alphaTest: 0.5" position="0 0.6 -0.99" width="0.4" height="0.4"></a-image>
+
+        <!-- 放後方的盆栽 (Z: -0.7，靠近背牆，XY 軸移到畫面左下角) -->
+        <a-image id="plant" src="assets/plant.png" material="alphaTest: 0.5" position="-0.3 -0.2 -0.7" width="0.4" height="0.6"></a-image>
+
+        <!-- 放前面的桌子 (Z: -0.2，靠近前面的門，營造前中後景的層次) -->
+        <a-image id="desk" src="assets/desk.png" material="alphaTest: 0.5" position="0 -0.3 -0.2" width="0.8" height="0.4"></a-image>
+        
+    </a-entity>
+
 </a-entity>
 
     <!-- 🐑 小羊紙娃娃群組 -->
