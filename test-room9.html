@@ -92,18 +92,7 @@
          renderer="colorManagement: true" 
          vr-mode-ui="enabled: false" 
          device-orientation-permission-ui="enabled: false">
-        <a-assets>
-        <img id="img-eyes1" src="assets/eyes1.png">
-        <img id="img-eyes2" src="assets/eyes2.png">
-        <img id="img-eyes3" src="assets/eyes3.png">
-
-        <img id="img-hair1" src="assets/hair1.png">
-        <img id="img-hair2" src="assets/hair2.png">
-        <img id="img-hair3" src="assets/hair3.png">
-
-        <img id="img-hat1" src="assets/hat1.png">
-        <img id="img-hat2" src="assets/hat2.png">
-        </a-assets>
+        
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
@@ -166,10 +155,10 @@
       <a-image id="feature-acc"  position="0 0 0.03" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
 
       <!-- 留言板文字 (改用穩定 CDN 字型，並把 Z 軸調到 0.1 確保在最前面) -->
-      <a-text id="layer-text" value="" align="center" color="#333333" width="2.5" position="0 0.6 0.1"
+    <a-text id="layer-text" value="" align="center" color="#333333" width="2.5" position="0 0.6 0.1"
             font="https://cdn.jsdelivr.net/gh/etiennepinchon/aframe-fonts@master/fonts/notosanstc/NotoSansTC-Regular.json"
             shader="msdf">
-      </a-text>
+    </a-text>
 </a-entity>
         
 </a-entity>
