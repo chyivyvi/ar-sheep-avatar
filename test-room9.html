@@ -36,7 +36,9 @@
 </head>
 
 <body>
-
+    <!-- 用來動態產生中文字的隱藏畫布 -->
+    <canvas id="name-canvas" width="512" height="128" style="display:none;"></canvas>
+    
     <!-- UI 面板 -->
     <div class="ui-container" id="ar-ui">
         <div class="tabs">
@@ -154,11 +156,8 @@
       <a-image id="feature-hair" position="0 0 0.02" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
       <a-image id="feature-acc"  position="0 0 0.03" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
 
-      <!-- 留言板文字 (改用穩定 CDN 字型，並把 Z 軸調到 0.1 確保在最前面) -->
-    <a-text id="layer-text" value="" align="center" color="#333333" width="2.5" position="0 0.6 0.1"
-            font="https://cdn.jsdelivr.net/gh/etiennepinchon/aframe-fonts@master/fonts/notosanstc/NotoSansTC-Regular.json"
-            shader="msdf">
-    </a-text>
+      <!-- 將留言板改成圖片接收器 (位置調高到頭頂) -->
+    　<a-image id="layer-text" position="0 0.55 0.1" width="2.5" height="0.625" material="alphaTest: 0.1" visible="false"></a-image>
 </a-entity>
         
 </a-entity>
@@ -203,17 +202,36 @@
         }, 10);
     }
 
-    // 3. 更新暱稱/留言
-    function updateNickname() {
-        const textValue = document.getElementById('nameField').value;
-        const textLayer = document.getElementById('layer-text');
+    // 3. 更新暱稱/留言 (Canvas 轉圖法)
+function updateNickname() {
+    const textValue = document.getElementById('nameField').value;
+    const textLayer = document.getElementById('layer-text');
     
-        if (textValue.trim() !== "") {
-            textLayer.setAttribute('value', `- ${textValue} -`);
-        } else {
-            textLayer.setAttribute('value', '');
-        }
+    if (textValue.trim() !== "") {
+        // 1. 取得畫布
+        const canvas = document.getElementById('name-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 2. 清空畫布（確保每次都是透明背景）
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 3. 設定文字樣式 (這裡可以自訂顏色、大小)
+        ctx.fillStyle = '#555555'; 
+        ctx.font = 'bold 50px sans-serif'; // 直接用手機內建字體
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // 4. 在畫布正中間畫上文字
+        ctx.fillText(`- ${textValue} -`, canvas.width / 2, canvas.height / 2);
+        
+        // 5. 變魔術：把畫布轉成圖片 URL，直接換裝！
+        textLayer.setAttribute('src', canvas.toDataURL('image/png'));
+        textLayer.setAttribute('visible', 'true');
+    } else {
+        // 如果沒打字，就隱藏起來
+        textLayer.setAttribute('visible', 'false');
     }
+}
 
     // 4. 重新打扮 (修復版)
     function resetAvatar() {
@@ -234,7 +252,7 @@
 
         // 清除留言板文字與輸入框
         document.getElementById('nameField').value = "";
-        document.getElementById('layer-text').setAttribute('value', '');
+        document.getElementById('layer-text').setAttribute('visible', 'false');
     
         // 讓小羊往下頓一下表示重置成功
         const sheepGroup = document.getElementById('sheep-group');
