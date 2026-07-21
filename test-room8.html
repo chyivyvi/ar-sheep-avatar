@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        
+        /* UI 容器：精緻的紙娃娃面板 */
+        .ui-container {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 90%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.95); border-radius: 20px;
+            padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+        
+        .tabs { display: flex; justify-content: space-around; margin-bottom: 10px; }
+        .tab-btn { border: none; background: none; font-weight: bold; padding: 5px 10px; cursor: pointer; color: #888; }
+        .tab-btn.active { color: #ff9999; border-bottom: 2px solid #ff9999; }
+        
+        .options-panel { display: none; gap: 10px; overflow-x: auto; padding: 5px 0; }
+        .options-panel.active { display: flex; }
+        
+        .opt-btn { min-width: 60px; height: 60px; border: 2px solid #eee; border-radius: 12px; background: white; cursor: pointer; }
+        .opt-btn.selected { border-color: #ff9999; background: #fff5f5; }
+        
+        /* 暱稱輸入區域 */
+        .input-group { display: flex; gap: 8px; width: 100%; }
+        .nickname-input { flex: 1; padding: 8px 12px; border: 2px solid #eee; border-radius: 20px; outline: none; }
+        
+        /* 功能按鈕 */
+        .action-bar { display: flex; justify-content: space-between; margin-top: 12px; }
+        .action-btn { padding: 8px 16px; border-radius: 20px; border: none; background: #ffcccc; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+
+<body>
+
+    <!-- UI 面板 -->
+    <div class="ui-container" id="ar-ui">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('eyes')">👀 眼神</button>
+            <button class="tab-btn" onclick="switchTab('hair')">🧒 髮型</button>
+            <button class="tab-btn" onclick="switchTab('acc')">👑 穿搭</button>
+            <button class="tab-btn" onclick="switchTab('name')">✍️ 留言</button>
+        </div>
+
+        <!-- 眼神選項 -->
+        <div id="panel-eyes" class="options-panel active">
+            <button class="opt-btn" onclick="toggleFeature('eyes', 'eyes-1', this)">款式 A</button>
+            <button class="opt-btn" onclick="toggleFeature('eyes', 'eyes-2', this)">款式 B</button>
+            <button class="opt-btn" onclick="toggleFeature('eyes', 'eyes-3', this)">款式 C</button>
+        </div>
+
+        <!-- 髮型選項 -->
+       <div id="panel-hair" class="options-panel">
+          <button class="opt-btn" onclick="toggleFeature('hair', 'hair-1', this)">髮型 A</button>
+          <button class="opt-btn" onclick="toggleFeature('hair', 'hair-2', this)">髮型 B</button>
+          <button class="opt-btn" onclick="toggleFeature('hair', 'hair-3', this)">髮型 C</button>
+       </div>
+
+        <!-- 配件選項 -->
+        <div id="panel-acc" class="options-panel">
+          <button class="opt-btn" onclick="toggleFeature('acc', 'acc-1', this)">配件 1</button>
+          <button class="opt-btn" onclick="toggleFeature('acc', 'acc-2', this)">配件 2</button>
+        </div>
+
+        <!-- 暱稱輸入 -->
+        <div id="panel-name" class="options-panel">
+            <div class="input-group">
+                <input type="text" id="nameField" class="nickname-input" placeholder="簽個名吧..." maxlength="10">
+                <button class="action-btn" onclick="updateNickname()">套用</button>
+            </div>
+        </div>
+
+        <!-- 底部按鈕 -->
+        <div class="action-bar">
+            <button class="action-btn" style="background:#e0f7fa;" onclick="enterPhotoMode()">📸 隱藏介面合照</button>
+            <button class="action-btn" style="background:#eee;" onclick="resetAvatar()">🔄 重新打扮</button>
+        </div>
+    </div>
+
+    <!-- AR 場景 -->
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; 
+                       autoStart: true; 
+                       uiLoading: no; 
+                       filterMinCF: 0.0001; 
+                       filterBeta: 0.001; 
+                       missTolerance: 5;" 
+         color-space="sRGB" 
+         renderer="colorManagement: true" 
+         vr-mode-ui="enabled: false" 
+         device-orientation-permission-ui="enabled: false">
+        <a-assets>
+        <img id="img-eyes1" src="assets/eyes1.png">
+        <img id="img-eyes2" src="assets/eyes2.png">
+        <img id="img-eyes3" src="assets/eyes3.png">
+
+        <img id="img-hair1" src="assets/hair1.png">
+        <img id="img-hair2" src="assets/hair2.png">
+        <img id="img-hair3" src="assets/hair3.png">
+
+        <img id="img-hat1" src="assets/hat1.png">
+        <img id="img-hat2" src="assets/hat2.png">
+        </a-assets>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+            <!-- 🏠 房間群組：加入 alphaTest 與雙面渲染 -->
+<a-entity id="ar-room" scale="1 1 1" position="0 0 1">
+    
+    <!-- 1. 前景門 (關鍵：加上 alphaTest，讓透明部分真正鏤空) -->
+    <a-image id="wall-door" src="assets/door.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="0 0.25 0" rotation="0 0 0" width="1" height="1.5"></a-image>
+
+    <!-- 2. 天花板/屋頂 -->
+    <a-image id="roof-left" src="assets/roof.png" material="alphaTest: 0.5; side: double" 
+             position="-0.25 0.75 -0.5" rotation="-45 -90 0" width="1.1" height="0.8"></a-image>
+    <a-image id="roof-right" src="assets/roof.png" material="alphaTest: 0.5; side: double" 
+             position="0.25 0.75 -0.5" rotation="-45 90 0" width="1.1" height="0.8"></a-image>
+    
+    <!-- 3. 地板 -->
+    <a-image id="floor-base" src="assets/floor.png" 
+             material="alphaTest: 0.5" 
+             position="0 -0.5 -0.5" rotation="-90 0 0" width="1" height="1"></a-image>
+     <a-image id="floor-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
+         position="0 -0.501 -0.5" rotation="90 0 0" width="1" height="1"></a-image>   
+
+    <!-- 4. 左牆 -->
+    <a-image id="left_wall" src="assets/left_wall.png" 
+             material="alphaTest: 0.5" 
+             position="-0.5 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
+    <a-image id="wall-left-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
+         position="-0.501 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
+
+    <!-- 5. 右牆 -->
+    <a-image id="right_wall" src="assets/right_wall.png" 
+             material="alphaTest: 0.5" 
+             position="0.5 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
+    <a-image id="wall-right-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
+         position="0.501 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
+
+    <!-- 6. 背牆 -->
+    <a-image id="back_wall" src="assets/back_wall.png" 
+             material="alphaTest: 0.5; side: double" 
+             position="0 0.25 -1" rotation="0 0 0" width="1" height="1.5"></a-image>
+
+     <!-- 7. 家具 -->
+     <a-image id="lamp" src="assets/lamp.png" 
+              material="alphaTest: 0.5; side: double" 
+              position="0 0.5 -0.5" width="1" height="1">
+     </a-image>
+    
+</a-entity>
+
+    <!-- 🐑 小羊紙娃娃群組 -->
+    <a-entity id="sheep-group" position="0 0 0.5" scale="1 1 1">
+         <!-- 主體（身體） -->
+    <a-image id="sheep-body" src="assets/sheep_body.png" material="alphaTest: 0.5" position="0 0 0" width="1" height="1"></a-image>
+        <!-- 動態部件-->
+    <!-- 眼睛-->
+        <a-image id="eyes-1" src="assets/eyes1.png" material="alphaTest: 0.5" position="0 0 0.01" width="1" height="1" visible="false"></a-image>
+        <a-image id="eyes-2" src="assets/eyes2.png" material="alphaTest: 0.5" position="0 0 0.01" width="1" height="1" visible="false"></a-image>
+        <a-image id="eyes-3" src="assets/eyes3.png" material="alphaTest: 0.5" position="0 0 0.01" width="1" height="1" visible="false"></a-image>
+    <!-- 髮型-->
+        <a-image id="hair-1" src="assets/hair1.png" material="alphaTest: 0.5" position="0 0 0.02" width="1" height="1" visible="false"></a-image>
+        <a-image id="hair-2" src="assets/hair2.png" material="alphaTest: 0.5" position="0 0 0.02" width="1" height="1" visible="false"></a-image>
+        <a-image id="hair-3" src="assets/hair3.png" material="alphaTest: 0.5" position="0 0 0.02" width="1" height="1" visible="false"></a-image>
+    <!-- 配件-->
+        <a-image id="acc-1" src="assets/hat1.png" material="alphaTest: 0.5" position="0 0 0.03" width="1" height="1" visible="false"></a-image>
+        <a-image id="acc-2" src="assets/hat2.png" material="alphaTest: 0.5" position="0 0 0.03" width="1" height="1" visible="false"></a-image>
+
+    <!-- 留言板文字-->
+        <a-text id="layer-text" value="" align="center" color="#333335" width="2.5" position="0 0.55 0.04"
+            font="https://raw.githubusercontent.com/etiennepinchon/aframe-fonts/master/fonts/notosanstc/NotoSansTC-Bold.json"
+            shader="msdf">
+        </a-text>
+        
+</a-entity>
+
+        </a-entity>
+    </a-scene>
+
+    <script>
+        // 1. 切換分頁
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.options-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(`panel-${tabName}`).classList.add('active');
+        }
+
+        // 2. 換裝邏輯與「開心跳動」回饋
+        function toggleFeature(category, targetId, btnEl) {
+        // 2-1. 先把同類別的所有圖層隱藏
+            document.querySelectorAll(`[id^="${category}-"]`).forEach(el => {
+            el.setAttribute('visible', 'false');
+        });
+
+        // 2-2. 顯示點選的圖層
+        const target = document.getElementById(targetId);
+            if (target) {
+            target.setAttribute('visible', 'true');
+        }
+
+        // 2-3. UI 按鈕選取狀態切換
+        const panel = document.getElementById(`panel-${category}`);
+            panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            btnEl.classList.add('selected');
+
+        // 2-4. 開心跳動動畫
+        const sheepGroup = document.getElementById('sheep-group');
+            sheepGroup.removeAttribute('animation__happy'); 
+            setTimeout(() => {
+            sheepGroup.setAttribute('animation__happy', {
+                property: 'position',
+                from: '0 0 0.5',
+                to: '0 0.08 0.5',
+                dir: 'alternate',
+                dur: 180,
+                loop: 2,
+                easing: 'easeOutQuad'
+                });
+            }, 10);
+        }
+
+        // 3. 更新留言暱稱
+        function updateNickname() {
+            const textValue = document.getElementById('nameField').value;
+            const textLayer = document.getElementById('layer-text');
+            if(textValue.trim() !== "") {
+                textLayer.setAttribute('value', `- ${textValue} -`);
+            } else {
+                textLayer.setAttribute('value', '');
+            }
+        }
+
+        // 4. 拍照模式
+        function enterPhotoMode() {
+            document.getElementById('ar-ui').style.display = 'none';
+            setTimeout(() => {
+                document.addEventListener('pointerdown', exitPhotoMode, { once: true });
+            }, 300);
+        }
+
+        function exitPhotoMode() {
+            document.getElementById('ar-ui').style.display = 'block';
+        }
+
+        // 5. 重新打扮
+        function resetAvatar() {
+            ['eyes', 'hair', 'acc'].forEach(type => {
+                const el = document.getElementById(`feature-${type}`);
+                el.setAttribute('visible', 'false');
+                el.removeAttribute('src');
+            });
+            document.getElementById('layer-text').setAttribute('value', '');
+            document.getElementById('nameField').value = '';
+            document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            switchTab('eyes');
+        }
+    </script>
+</body>
+</html>
