@@ -82,7 +82,28 @@
     </div>
 
     <!-- AR 場景 -->
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: true; uiLoading: no;" color-space="sRGB" renderer="colorManagement: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; 
+                       autoStart: true; 
+                       uiLoading: no; 
+                       filterMinCF: 0.0001; 
+                       filterBeta: 0.001; 
+                       missTolerance: 5;" 
+         color-space="sRGB" 
+         renderer="colorManagement: true" 
+         vr-mode-ui="enabled: false" 
+         device-orientation-permission-ui="enabled: false">
+        <a-assets>
+        <img id="img-eyes1" src="assets/eyes1.png">
+        <img id="img-eyes2" src="assets/eyes2.png">
+        <img id="img-eyes3" src="assets/eyes3.png">
+
+        <img id="img-hair1" src="assets/hair1.png">
+        <img id="img-hair2" src="assets/hair2.png">
+        <img id="img-hair3" src="assets/hair3.png">
+
+        <img id="img-hat1" src="assets/hat1.png">
+        <img id="img-hat2" src="assets/hat2.png">
+        </a-assets>
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
