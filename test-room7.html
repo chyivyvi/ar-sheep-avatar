@@ -134,19 +134,26 @@
     
 </a-entity>
 
-            <!-- 🐑 小羊紙娃娃群組>
-            <a-entity id="sheep-group" position="0 0 0.5" scale="1 1 1">
-                <!-- 主體（身體） -->
-                <a-image id="sheep-body" src="assets/sheep_body.png" position="0 0 0" width="1" height="1"></a-image>
-                
-                <!-- 動態部件 (Z 軸微調即可，因為已經在群組內) -->
-                <a-image id="feature-eyes" position="0 0 0.01" width="1" height="1" visible="false"></a-image>
-                <a-image id="feature-hair" position="0 0 0.02" width="1" height="1" visible="false"></a-image>
-                <a-image id="feature-acc" position="0 0 0.03" width="1" height="1" visible="false"></a-image>
+<!-- 🐑 小羊紙娃娃群組 -->
+<a-entity id="sheep-group" position="0 0 0.5" scale="1 1 1">
+    <!-- 主體（身體） -->
+    <a-image id="sheep-body" src="assets/sheep_body.png" 
+             material="alphaTest: 0.5" 
+             position="0 0 0" width="1" height="1"></a-image>
+    
+    <!-- 動態部件 (加上 alphaTest 解決破圖) -->
+    <a-image id="feature-eyes" position="0 0 0.01" width="1" height="1" 
+             material="alphaTest: 0.5" visible="false"></a-image>
+             
+    <a-image id="feature-hair" position="0 0 0.02" width="1" height="1" 
+             material="alphaTest: 0.5" visible="false"></a-image>
+             
+    <a-image id="feature-acc" position="0 0 0.03" width="1" height="1" 
+             material="alphaTest: 0.5" visible="false"></a-image>
 
-                <!-- 留言板文字 (放在小羊下方) -->
-                <a-text id="layer-text" value="" align="center" color="#555555" width="2" position="0 -0.6 0.04"></a-text>
-            </a-entity>
+    <!-- 留言板文字 (放在小羊下方) -->
+    <a-text id="layer-text" value="" align="center" color="#555555" width="2" position="0 -0.6 0.04"></a-text>
+</a-entity>
 
         </a-entity>
     </a-scene>
