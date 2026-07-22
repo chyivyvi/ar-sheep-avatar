@@ -179,14 +179,19 @@
         document.getElementById(`panel-${tabName}`).classList.add('active');
     }
 
-    // 2. 換裝邏輯 (無閃爍魔法版)
+    // 2. 換裝邏輯 (完美隱形換裝版)
     function customize(type, imgSrc, btnEl) {
-        // 1. 切換按鈕的粉紅色選取狀態
+        const targetLayer = document.getElementById(`feature-${type}`);
+    
+        // 💡 防呆機制：如果點擊的是「現在已經戴著」的配件，就直接結束，不做任何動作
+        if (targetLayer.getAttribute('src') === imgSrc) return;
+
+        // 1. 切換按鈕選取狀態
         const panel = document.getElementById(`panel-${type}`);
         panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
         btnEl.classList.add('selected');
 
-        // 2. 讓小羊開心地跳一下 (動畫維持不變)
+        // 2. 小羊開心跳躍
         const sheepGroup = document.getElementById('sheep-group');
         sheepGroup.removeAttribute('animation__happy'); 
         setTimeout(() => {
@@ -201,18 +206,21 @@
             });
         }, 10);
 
-        // 3. ⭐️ 核心修正：使用 JS 在背景偷偷下載圖片
-        const tempImg = new Image(); // 創造一個隱形的圖片物件
+        // 3. ⭐️ 核心修正：利用 A-Frame 內建事件等待材質載入
+        // 步驟 A：先隱藏圖層，避免露出白塊
+        targetLayer.setAttribute('visible', 'false');
     
-        // 當圖片在背景完全下載且解碼完畢時，才會觸發這裡的程式
-        tempImg.onload = function() {
-            const targetLayer = document.getElementById(`feature-${type}`);
-            targetLayer.setAttribute('src', imgSrc); // 秒切換，因為圖片已經在記憶體裡了！
+        // 步驟 B：替換圖片路徑，這時 A-Frame 會開始在背景處理材質
+        targetLayer.setAttribute('src', imgSrc);
+
+        // 步驟 C：告訴 A-Frame「當材質完全貼好後，再叫醒我」
+        targetLayer.addEventListener('materialtextureloaded', function onLoaded() {
+            // 材質準備好了，重新顯示圖層！
             targetLayer.setAttribute('visible', 'true');
-        };
-    
-        // 告訴隱形圖片去抓哪個檔案，這行會觸發上面的 onload
-        tempImg.src = imgSrc; 
+        
+            // 為了避免重複觸發，執行完就把這個監聽器移除
+            targetLayer.removeEventListener('materialtextureloaded', onLoaded);
+        });
     }
 
     // 3. 更新暱稱/留言 (Canvas 轉圖法)
