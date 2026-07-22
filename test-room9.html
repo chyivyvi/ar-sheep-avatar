@@ -179,18 +179,14 @@
         document.getElementById(`panel-${tabName}`).classList.add('active');
     }
 
-    // 2. 換裝邏輯 (恢復你原本的動態載入法，保留修復後的座標)
+    // 2. 換裝邏輯 (無閃爍魔法版)
     function customize(type, imgSrc, btnEl) {
-        const targetLayer = document.getElementById(`feature-${type}`);
-        targetLayer.setAttribute('src', imgSrc);
-        targetLayer.setAttribute('visible', 'true');
-    
-        // 按鈕樣式切換
+        // 1. 切換按鈕的粉紅色選取狀態
         const panel = document.getElementById(`panel-${type}`);
         panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
         btnEl.classList.add('selected');
 
-        // 開心跳動
+        // 2. 讓小羊開心地跳一下 (動畫維持不變)
         const sheepGroup = document.getElementById('sheep-group');
         sheepGroup.removeAttribute('animation__happy'); 
         setTimeout(() => {
@@ -204,6 +200,19 @@
                 easing: 'easeOutQuad'
             });
         }, 10);
+
+        // 3. ⭐️ 核心修正：使用 JS 在背景偷偷下載圖片
+        const tempImg = new Image(); // 創造一個隱形的圖片物件
+    
+        // 當圖片在背景完全下載且解碼完畢時，才會觸發這裡的程式
+        tempImg.onload = function() {
+            const targetLayer = document.getElementById(`feature-${type}`);
+            targetLayer.setAttribute('src', imgSrc); // 秒切換，因為圖片已經在記憶體裡了！
+            targetLayer.setAttribute('visible', 'true');
+        };
+    
+        // 告訴隱形圖片去抓哪個檔案，這行會觸發上面的 onload
+        tempImg.src = imgSrc; 
     }
 
     // 3. 更新暱稱/留言 (Canvas 轉圖法)
