@@ -430,35 +430,43 @@ window.customize = function(type, imgSrc, btnEl) {
 };
 
     // 3. 更新暱稱/留言 (Canvas 轉圖法)
-function updateNickname() {
-    const textValue = document.getElementById('nameField').value;
-    const textLayer = document.getElementById('layer-text');
-    
-    if (textValue.trim() !== "") {
-        // 1. 取得畫布
-        const canvas = document.getElementById('name-canvas');
-        const ctx = canvas.getContext('2d');
+window.updateNickname = function() {
+    const inputField = document.getElementById('nameField');
+    const textEl = document.getElementById('layer-text'); 
+
+    // 防呆機制：確保輸入框和 3D 文字圖層都存在，才執行動作
+    if (textEl && inputField) {
+        textEl.setAttribute('value', inputField.value);
         
-        // 2. 清空畫布（確保每次都是透明背景）
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // 3. 設定文字樣式 (這裡可以自訂顏色、大小)
-        ctx.fillStyle = '#555555'; 
-        ctx.font = 'bold 50px sans-serif'; // 直接用手機內建字體
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        // 4. 在畫布正中間畫上文字
-        ctx.fillText(`- ${textValue} -`, canvas.width / 2, canvas.height / 2);
-        
-        // 5. 變魔術：把畫布轉成圖片 URL，直接換裝！
-        textLayer.setAttribute('src', canvas.toDataURL('image/png'));
-        textLayer.setAttribute('visible', 'true');
+        // 互動回饋：套用文字時也讓小羊開心跳一下
+        const sheepGroup = document.getElementById('sheep-group');
+        if (sheepGroup) {
+            sheepGroup.removeAttribute('animation__happy'); 
+            setTimeout(() => {
+                sheepGroup.setAttribute('animation__happy', {
+                    property: 'position',
+                    from: '0 0 0.5',
+                    to: '0 0.08 0.5',
+                    dir: 'alternate',
+                    dur: 180,
+                    loop: 2,
+                    easing: 'easeOutQuad'
+                });
+            }, 10);
+        }
     } else {
-        // 如果沒打字，就隱藏起來
-        textLayer.setAttribute('visible', 'false');
+        console.warn('找不到輸入框或 3D 文字圖層，請檢查 HTML 裡的 ID 是否正確！');
     }
-}
+};
+
+// 🆕 全新：清除留言功能
+window.clearNickname = function() {
+    const inputField = document.getElementById('nameField');
+    const textEl = document.getElementById('layer-text'); 
+    
+    if (inputField) inputField.value = ''; // 1. 清空手機鍵盤輸入框的字
+    if (textEl) textEl.setAttribute('value', ''); // 2. 清空 3D 畫面上的字
+};
 
     // 4. 重新打扮 (修復版)
     function resetAvatar() {
