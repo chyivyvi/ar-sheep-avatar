@@ -368,65 +368,64 @@ window.changeCategory = function(direction) {
     }
 };
     // 2. 換裝邏輯 (完美隱形換裝版)
-    // 掛載到 window 確保按鈕絕對能觸發
+// 2. 換裝邏輯 (支援重複穿脫 + 隱形換裝)
 window.customize = function(type, imgSrc, btnEl) {
     const targetLayer = document.getElementById(`feature-${type}`);
-    
-    // 💡 全新邏輯：檢查現在是不是已經戴著這個配件，而且正在顯示中？
-    if (targetLayer.getAttribute('src') === imgSrc && targetLayer.getAttribute('visible') === 'true') {
+    const currentSrc = targetLayer.getAttribute('src');
+    const isVisible = targetLayer.getAttribute('visible') === 'true';
+
+    // 1. 處理 UI 按鈕視覺 (先清除該分類下所有按鈕的粉紅框)
+    const panel = document.getElementById(`panel-${type}`);
+    if (panel) {
+        panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    // 2. 判斷情境：是「脫掉」還是「穿上」？
+    if (currentSrc === imgSrc && isVisible) {
+        // 🎈 情境 A：脫掉 (點擊正在穿著且顯示中的配件)
+        targetLayer.setAttribute('visible', 'false');
         
-        // 🎈 【脫掉配件模式】
-        targetLayer.setAttribute('visible', 'false'); // 隱藏 3D 圖層
-        btnEl.classList.remove('selected');           // 取消按鈕的粉紅選取框
-        
-        // 脫掉配件也讓小羊輕輕跳一下，給予使用者操作成功的回饋
+        // 脫下的專屬小跳躍
         const sheepGroup = document.getElementById('sheep-group');
         sheepGroup.removeAttribute('animation__happy'); 
         setTimeout(() => {
             sheepGroup.setAttribute('animation__happy', {
-                property: 'position',
-                from: '0 0 0.5',
-                to: '0 0.04 0.5', // 脫掉的跳躍幅度設定得稍微小一點點，更有細節感
-                dir: 'alternate',
-                dur: 150,
-                loop: 2,
-                easing: 'easeOutQuad'
+                property: 'position', from: '0 0 0.5', to: '0 0.04 0.5',
+                dir: 'alternate', dur: 150, loop: 2, easing: 'easeOutQuad'
             });
         }, 10);
         
-        return; // 執行完「脫掉」就直接結束這回合！
+        return; // 執行完脫掉就結束
     }
 
-    // 👕 【穿上新配件模式】(以下維持我們之前寫好的完美無閃爍邏輯)
-    
-    // 1. 切換按鈕選取狀態
-    const panel = document.getElementById(`panel-${type}`);
-    panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
-    btnEl.classList.add('selected');
+    // 👕 情境 B：穿上 (包含穿新配件，或是把剛脫下的配件穿回去)
+    btnEl.classList.add('selected'); // 加上粉紅框
 
-    // 2. 小羊開心大跳躍
+    // 穿上的專屬大跳躍
     const sheepGroup = document.getElementById('sheep-group');
     sheepGroup.removeAttribute('animation__happy'); 
     setTimeout(() => {
         sheepGroup.setAttribute('animation__happy', {
-            property: 'position',
-            from: '0 0 0.5',
-            to: '0 0.08 0.5',
-            dir: 'alternate',
-            dur: 180,
-            loop: 2,
-            easing: 'easeOutQuad'
+            property: 'position', from: '0 0 0.5', to: '0 0.08 0.5',
+            dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
         });
     }, 10);
 
-    // 3. 隱形換裝魔法
-    targetLayer.setAttribute('visible', 'false');
-    targetLayer.setAttribute('src', imgSrc);
-    
-    targetLayer.addEventListener('materialtextureloaded', function onLoaded() {
+    // 3. 處理 3D 圖層顯示邏輯
+    if (currentSrc === imgSrc && !isVisible) {
+        // 💡 關鍵修復：如果是把「剛剛脫掉的同一件」穿回去
+        // 因為圖片沒變，不會觸發載入事件，所以直接把它顯示出來就好！
         targetLayer.setAttribute('visible', 'true');
-        targetLayer.removeEventListener('materialtextureloaded', onLoaded);
-    });
+    } else {
+        // 💡 換裝魔法：穿上一件全新的配件
+        targetLayer.setAttribute('visible', 'false');
+        targetLayer.setAttribute('src', imgSrc);
+        
+        targetLayer.addEventListener('materialtextureloaded', function onLoaded() {
+            targetLayer.setAttribute('visible', 'true');
+            targetLayer.removeEventListener('materialtextureloaded', onLoaded);
+        });
+    }
 };
 
     // 3. 更新暱稱/留言 (Canvas 轉圖法)
