@@ -368,39 +368,43 @@ window.changeCategory = function(direction) {
     }
 };
     // 2. 換裝邏輯 (支援快取、不閃爍、不卡死版)
+const layerTokens = {}; // 放在 customize 外面,記錄每個配件類別目前的最新版本號
+
 window.customize = function(type, imgSrc, btnEl) {
     const targetLayer = document.getElementById(`feature-${type}`);
     const currentSrc = targetLayer.getAttribute('src');
     const isVisible = targetLayer.getAttribute('visible') === true;
-
     const panel = document.getElementById(`panel-${type}`);
     if (panel) {
         panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
     }
+
+    // 🔑 每次呼叫都發新號碼牌，讓舊的非同步回呼自動失效
+    layerTokens[type] = (layerTokens[type] || 0) + 1;
+    const myToken = layerTokens[type];
 
     if (currentSrc === imgSrc && isVisible) {
         targetLayer.setAttribute('visible', 'false');
         bounce(0.04);
         return;
     }
-if (currentSrc === imgSrc && !isVisible) {
-    // 同一張圖只是重新顯示,不需要重新載入材質
-    targetLayer.setAttribute('visible', 'true');
-    return;
-}
+
+    if (currentSrc === imgSrc && !isVisible) {
+        targetLayer.setAttribute('visible', 'true');
+        bounce(0.08); // ✅ 補回漏掉的跳躍
+        return;
+    }
+
     btnEl.classList.add('selected');
     bounce(0.08);
-
-    // 先確保是隱藏的
     targetLayer.setAttribute('visible', 'false');
 
-    let shown = false;
     const revealNextFrame = function () {
-        if (shown) return;
-        shown = true;
-        // 🔑 關鍵:再多等兩幀讓 GPU 真的把貼圖畫上去，才掀開
+        if (layerTokens[type] !== myToken) return; // 過期的回呼，直接放棄
         requestAnimationFrame(() => {
+            if (layerTokens[type] !== myToken) return;
             requestAnimationFrame(() => {
+                if (layerTokens[type] !== myToken) return;
                 targetLayer.setAttribute('visible', 'true');
             });
         });
