@@ -6,34 +6,24 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: sans-serif; }
-        
-        /* UI 容器：精緻的紙娃娃面板 */
-        .ui-container {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; width: 90%; max-width: 400px;
-            background: rgba(255, 255, 255, 0.95); border-radius: 20px;
-            padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        }
-        
-        .tabs { display: flex; justify-content: space-around; margin-bottom: 10px; }
-        .tab-btn { border: none; background: none; font-weight: bold; padding: 5px 10px; cursor: pointer; color: #888; }
-        .tab-btn.active { color: #ff9999; border-bottom: 2px solid #ff9999; }
-        
-        .options-panel { display: none; gap: 10px; overflow-x: auto; padding: 5px 0; }
-        .options-panel.active { display: flex; }
-        
-        .opt-btn { min-width: 60px; height: 60px; border: 2px solid #eee; border-radius: 12px; background: white; cursor: pointer; }
-        .opt-btn.selected { border-color: #ff9999; background: #fff5f5; }
-        
-        /* 暱稱輸入區域 */
-        .input-group { display: flex; gap: 8px; width: 100%; }
-        .nickname-input { flex: 1; padding: 8px 12px; border: 2px solid #eee; border-radius: 20px; outline: none; }
-        
-        /* 功能按鈕 */
-        .action-bar { display: flex; justify-content: space-between; margin-top: 12px; }
-        .action-btn { padding: 8px 16px; border-radius: 20px; border: none; background: #ffcccc; font-weight: bold; cursor: pointer; }
 
-      /* 頂部切換列 */
+/* 1. 整個 UI 面板固定在最下方，還給相機上半部的視野 */
+#ar-ui {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    max-height: 45vh; /* 限制 UI 最高只能佔螢幕的 45% */
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+}
+
+/* 2. 頂部切換列 */
 .category-header {
     display: flex;
     justify-content: space-between;
@@ -53,14 +43,20 @@
     padding: 5px 15px;
 }
 
-/* 隱藏非作用中的面板 */
-.options-panel { display: none; padding: 15px; background: white; }
-.options-panel.active { display: block; }
+/* 3. 隱藏與顯示的關鍵 (解決全部按鈕跑出來的問題) */
+.options-panel {
+    display: none !important;
+    padding: 15px;
+    overflow-y: auto;
+}
+.options-panel.active {
+    display: block !important;
+}
 
-/* 超大圖文網格按鈕 */
+/* 4. 超大圖文網格按鈕 */
 .grid-layout {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 一排顯示 3 個按鈕，也可改 2 */
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
     max-height: 200px;
     overflow-y: auto;
@@ -74,7 +70,7 @@
     border: 2px solid #ffeaea;
     border-radius: 12px;
     padding: 10px;
-    aspect-ratio: 1 / 1; /* 確保按鈕是正方形 */
+    aspect-ratio: 1 / 1;
     transition: 0.2s;
 }
 .grid-layout .opt-btn.selected {
@@ -94,12 +90,39 @@
     font-weight: bold;
 }
 
-/* 留言面板排版 */
-.text-layout { display: flex; gap: 10px; flex-direction: column; align-items: center;}
-.text-layout input { width: 90%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; text-align: center; }
-.apply-btn { width: 90%; padding: 12px; background: #ff7675; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
+/* 5. 留言面板專屬排版 */
+.text-layout {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.text-layout.options-panel {
+    display: none !important; /* 預設隱藏 */
+}
+.text-layout.options-panel.active {
+    display: flex !important; /* 啟動時顯示 */
+}
+.text-layout input { 
+    width: 90%; 
+    padding: 10px; 
+    border-radius: 8px; 
+    border: 1px solid #ccc; 
+    font-size: 16px; 
+    text-align: center; 
+}
+.apply-btn { 
+    width: 90%; 
+    padding: 12px; 
+    background: #ff7675; 
+    color: white; 
+    border: none; 
+    border-radius: 8px; 
+    font-size: 16px; 
+    font-weight: bold; 
+}
 
-/* 底部功能列 */
+/* 6. 底部功能列 */
 .bottom-actions {
     display: flex;
     justify-content: space-around;
@@ -107,7 +130,14 @@
     background: white;
     border-top: 1px solid #eee;
 }
-.action-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; background: white; color: #666; font-size: 14px; }
+.action-btn { 
+    padding: 8px 15px; 
+    border-radius: 20px; 
+    border: 1px solid #ddd; 
+    background: white; 
+    color: #666; 
+    font-size: 14px; 
+}
     </style>
 </head>
 
