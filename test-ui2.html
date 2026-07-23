@@ -433,10 +433,44 @@ window.customize = function(type, imgSrc, btnEl) {
 window.updateNickname = function() {
     const inputField = document.getElementById('nameField');
     const textEl = document.getElementById('layer-text'); 
+    const canvas = document.getElementById('name-canvas');
 
-    // 防呆機制：確保輸入框和 3D 文字圖層都存在，才執行動作
-    if (textEl && inputField) {
-        textEl.setAttribute('value', inputField.value);
+    // 防呆機制：確保輸入框、3D 圖層、畫布都存在
+    if (textEl && inputField && canvas) {
+        const text = inputField.value.trim();
+        
+        // 如果使用者沒打字就按套用，就當作清除
+        if (text === "") {
+            textEl.setAttribute('visible', 'false');
+            return;
+        }
+
+        // 🎨 --- Canvas 繪製中文字魔法 ---
+        const ctx = canvas.getContext('2d');
+        // 清空畫布 (保持背景透明)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 設定文字樣式 (這裡你可以自己改喜歡的顏色喔！)
+        ctx.fillStyle = '#ff7675'; // 填滿顏色 (深粉紅)
+        ctx.font = 'bold 60px sans-serif'; // 字體粗細與大小
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // 加上白色邊框，讓字在任何背景下都能看清楚
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = 'white';
+        ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+        
+        // 畫出文字本體
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        // 將畫好的字轉成 PNG 圖片格式
+        const dataURL = canvas.toDataURL('image/png');
+        
+        // 套用到 a-image 上並顯示出來
+        textEl.setAttribute('src', dataURL);
+        textEl.setAttribute('visible', 'true');
+        // -----------------------------
         
         // 互動回饋：套用文字時也讓小羊開心跳一下
         const sheepGroup = document.getElementById('sheep-group');
@@ -455,17 +489,20 @@ window.updateNickname = function() {
             }, 10);
         }
     } else {
-        console.warn('找不到輸入框或 3D 文字圖層，請檢查 HTML 裡的 ID 是否正確！');
+        console.warn('找不到畫布或輸入框元件！');
     }
 };
 
-// 🆕 全新：清除留言功能
+// 🆕 全新：清除留言功能 (相容圖片模式)
 window.clearNickname = function() {
     const inputField = document.getElementById('nameField');
     const textEl = document.getElementById('layer-text'); 
     
     if (inputField) inputField.value = ''; // 1. 清空手機鍵盤輸入框的字
-    if (textEl) textEl.setAttribute('value', ''); // 2. 清空 3D 畫面上的字
+    if (textEl) {
+        textEl.removeAttribute('src'); // 清除圖片暫存
+        textEl.setAttribute('visible', 'false'); // 2. 隱藏 3D 畫面上的字
+    }
 };
 
     // 4. 重新打扮 (修復版)
