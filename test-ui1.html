@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        
+        /* UI 容器：精緻的紙娃娃面板 */
+        .ui-container {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 90%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.95); border-radius: 20px;
+            padding: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+        
+        .tabs { display: flex; justify-content: space-around; margin-bottom: 10px; }
+        .tab-btn { border: none; background: none; font-weight: bold; padding: 5px 10px; cursor: pointer; color: #888; }
+        .tab-btn.active { color: #ff9999; border-bottom: 2px solid #ff9999; }
+        
+        .options-panel { display: none; gap: 10px; overflow-x: auto; padding: 5px 0; }
+        .options-panel.active { display: flex; }
+        
+        .opt-btn { min-width: 60px; height: 60px; border: 2px solid #eee; border-radius: 12px; background: white; cursor: pointer; }
+        .opt-btn.selected { border-color: #ff9999; background: #fff5f5; }
+        
+        /* 暱稱輸入區域 */
+        .input-group { display: flex; gap: 8px; width: 100%; }
+        .nickname-input { flex: 1; padding: 8px 12px; border: 2px solid #eee; border-radius: 20px; outline: none; }
+        
+        /* 功能按鈕 */
+        .action-bar { display: flex; justify-content: space-between; margin-top: 12px; }
+        .action-btn { padding: 8px 16px; border-radius: 20px; border: none; background: #ffcccc; font-weight: bold; cursor: pointer; }
+
+      /* 頂部切換列 */
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f8f8;
+    padding: 10px 20px;
+    border-radius: 15px 15px 0 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+.nav-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #ff7675;
+    padding: 5px 15px;
+}
+
+/* 隱藏非作用中的面板 */
+.options-panel { display: none; padding: 15px; background: white; }
+.options-panel.active { display: block; }
+
+/* 超大圖文網格按鈕 */
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 一排顯示 3 個按鈕，也可改 2 */
+    gap: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.grid-layout .opt-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fff0f0;
+    border: 2px solid #ffeaea;
+    border-radius: 12px;
+    padding: 10px;
+    aspect-ratio: 1 / 1; /* 確保按鈕是正方形 */
+    transition: 0.2s;
+}
+.grid-layout .opt-btn.selected {
+    border-color: #ff7675;
+    background: #ffe5e5;
+    transform: scale(0.95);
+}
+.btn-icon {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+.btn-label {
+    font-size: 14px;
+    color: #555;
+    font-weight: bold;
+}
+
+/* 留言面板排版 */
+.text-layout { display: flex; gap: 10px; flex-direction: column; align-items: center;}
+.text-layout input { width: 90%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; text-align: center; }
+.apply-btn { width: 90%; padding: 12px; background: #ff7675; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
+
+/* 底部功能列 */
+.bottom-actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+.action-btn { padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; background: white; color: #666; font-size: 14px; }
+    </style>
+</head>
+
+<body>
+    <!-- 用來動態產生中文字的隱藏畫布 -->
+    <canvas id="name-canvas" width="512" height="128" style="display:none;"></canvas>
+    
+   <!-- 📱 全新 AR 操作介面 -->
+<div id="ar-ui">
+    
+    <!-- 1. 頂部分類切換列 -->
+    <div class="category-header">
+        <button class="nav-btn" onclick="changeCategory(-1)">◀</button>
+        <span id="category-title">👀 眼神</span>
+        <button class="nav-btn" onclick="changeCategory(1)">▶</button>
+    </div>
+
+    <!-- 2. 下方面板區 -->
+    <div id="panels-container">
+        
+        <!-- 眼神面板 (網格佈局) -->
+        <div id="panel-eyes" class="options-panel active grid-layout">
+            <!-- 示範圖文按鈕：請將 img src 換成你輸出的 UI 小圖示 -->
+            <button class="opt-btn" onclick="customize('eyes', 'assets/eyes1.png', this)">
+                <img src="assets/ui_eyes1.png" alt="款式 A" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">微笑眼</span>
+            </button>
+            <button class="opt-btn" onclick="customize('eyes', 'assets/eyes2.png', this)">
+                <img src="assets/ui_eyes2.png" alt="款式 B" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">星星眼</span>
+            </button>
+        </div>
+
+        <!-- 髮型面板 (網格佈局) -->
+        <div id="panel-hair" class="options-panel grid-layout">
+            <button class="opt-btn" onclick="customize('hair', 'assets/hair1.png', this)">
+                <img src="assets/ui_hair1.png" alt="髮型 A" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">捲捲毛</span>
+            </button>
+            <button class="opt-btn" onclick="customize('hair', 'assets/hair2.png', this)">
+                <img src="assets/ui_hair2.png" alt="髮型 B" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">龐克頭</span>
+            </button>
+        </div>
+
+        <!-- 配件面板 (網格佈局) -->
+        <div id="panel-acc" class="options-panel grid-layout">
+            <button class="opt-btn" onclick="customize('acc', 'assets/hat1.png', this)">
+                <img src="assets/ui_hat1.png" alt="配件 1" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">魔術禮帽</span>
+            </button>
+            <button class="opt-btn" onclick="customize('acc', 'assets/hat2.png', this)">
+                <img src="assets/ui_hat2.png" alt="配件 2" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">獵鹿帽</span>
+            </button>
+        </div>
+
+        <!-- 留言面板 (維持單行輸入佈局) -->
+        <div id="panel-text" class="options-panel text-layout">
+            <input type="text" id="nameField" placeholder="輸入想說的話..." maxlength="10">
+            <button class="opt-btn apply-btn" onclick="updateNickname()">套用文字</button>
+        </div>
+        
+    </div>
+
+    <!-- 3. 最底部的功能列 -->
+    <div class="bottom-actions">
+        <!-- 保留原本的重新打扮與拍照按鈕 -->
+        <button class="action-btn" onclick="resetAvatar()">🔄 重新打扮</button>
+        <button class="action-btn" onclick="enterPhotoMode()">📷 隱藏介面</button>
+    </div>
+</div>
+
+    <!-- AR 場景 -->
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; 
+                       autoStart: true; 
+                       uiLoading: no; 
+                       filterMinCF: 0.0001; 
+                       filterBeta: 0.001; 
+                       missTolerance: 5;" 
+         color-space="sRGB" 
+         renderer="colorManagement: true" 
+         vr-mode-ui="enabled: false" 
+         device-orientation-permission-ui="enabled: false">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+           <!-- 🏠 房間與家具總群組 (統一在這裡控制整個房間的縮放與位置) -->
+<a-entity id="ar-room" scale="1 1 1" position="0 0 1">
+    
+    <!-- ============================== -->
+    <!-- 🧱 第一部分：房間基礎結構 (門、牆、地板、屋頂) -->
+    <!-- ============================== -->
+    <a-entity id="room-structure">
+        <!-- 1. 前景門 -->
+        <a-image id="wall-door" src="assets/door.png" material="alphaTest: 0.5; side: double" position="0 0.25 0" rotation="0 0 0" width="1" height="1.5"></a-image>
+
+        <!-- 2. 天花板/屋頂 -->
+        <a-image id="roof-left" src="assets/roof.png" material="alphaTest: 0.5; side: double" position="-0.25 0.75 -0.5" rotation="-45 -90 0" width="1.1" height="0.8"></a-image>
+        <a-image id="roof-right" src="assets/roof.png" material="alphaTest: 0.5; side: double" position="0.25 0.75 -0.5" rotation="-45 90 0" width="1.1" height="0.8"></a-image>
+        
+        <!-- 3. 地板 -->
+        <a-image id="floor-base" src="assets/floor.png" material="alphaTest: 0.5" position="0 -0.5 -0.5" rotation="-90 0 0" width="1" height="1"></a-image>
+        <a-image id="floor-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" position="0 -0.501 -0.5" rotation="90 0 0" width="1" height="1"></a-image>   
+
+        <!-- 4. 左牆 -->
+        <a-image id="left_wall" src="assets/left_wall.png" material="alphaTest: 0.5" position="-0.5 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
+        <a-image id="wall-left-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" position="-0.501 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
+
+        <!-- 5. 右牆 -->
+        <a-image id="right_wall" src="assets/right_wall.png" material="alphaTest: 0.5" position="0.5 0 -0.5" rotation="0 -90 0" width="1" height="1"></a-image>
+        <a-image id="wall-right-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" position="0.501 0 -0.5" rotation="0 90 0" width="1" height="1"></a-image>
+
+        <!-- 6. 背牆 -->
+        <a-image id="back_wall" src="assets/back_wall.png" material="alphaTest: 0.5; side: double" position="0 0.25 -1" rotation="0 0 0" width="1" height="1.5"></a-image>
+    </a-entity>
+
+    <!-- ============================== -->
+    <!-- 🛋️ 第二部分：室內家具群組 (燈、時鐘、盆栽、桌子) -->
+    <!-- 💡 空間深度提示：前景門是 0，背牆是 -1 -->
+    <!-- ============================== -->
+    <a-entity id="furniture-group">
+        
+        <!-- 原本的吊燈 (Z: -0.5，懸掛在房間正中間) -->
+        <a-image id="lamp" src="assets/lamp.png" material="alphaTest: 0.5; side: double" position="0 0.5 -0.5" width="1" height="1"></a-image>
+
+        <!-- 掛在背牆的時鐘 (Z: -0.99，比背牆稍微往前 0.01，避免兩張圖疊在一起產生閃爍破圖) -->
+        <!-- <a-image id="wall-clock" src="assets/clock.png" material="alphaTest: 0.5" position="0 0 -0.99" width="1" height="1"></a-image>-->
+
+        <!-- 放後方的盆栽 (Z: -0.7，靠近背牆，XY 軸移到畫面左下角) -->
+        <a-image id="plant" src="assets/plant.png" material="alphaTest: 0.5" position="0 0 -0.7" width="1" height="1"></a-image>
+
+        <!-- 放前面的桌子 (Z: -0.2，靠近前面的門，營造前中後景的層次) -->
+        <!-- <a-image id="desk" src="assets/desk.png" material="alphaTest: 0.5" position="0 0 -0.2" width="1" height="1"></a-image>-->
+        
+    </a-entity>
+
+</a-entity>
+
+    <!-- 🐑 小羊紙娃娃群組 -->
+    <a-entity id="sheep-group" position="0 0 0.5" scale="1 1 1">
+      <!-- 主體（身體） -->
+      <a-image id="sheep-body" src="assets/sheep_body.png" material="alphaTest: 0.5" position="0 0 0" width="1" height="1"></a-image>
+    
+      <!-- 動態部件 (保持原來的彈性寫法，只留三個圖層) -->
+      <a-image id="feature-eyes" position="0 0 0.01" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
+      <a-image id="feature-hair" position="0 0 0.02" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
+      <a-image id="feature-acc"  position="0 0 0.03" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
+
+      <!-- 將留言板改成圖片接收器 (位置調高到頭頂) -->
+    　<a-image id="layer-text" position="0 0.55 0.1" width="2.5" height="0.625" material="alphaTest: 0.1" visible="false"></a-image>
+</a-entity>
+        
+</a-entity>
+
+        </a-entity>
+    </a-scene>
+
+    <script>
+    // 定義分類順序與標題
+const categories = ['eyes', 'hair', 'acc', 'text'];
+const categoryTitles = {
+    'eyes': '👀 眼神',
+    'hair': '💇‍♀️ 髮型',
+    'acc': '🎩 穿搭與配件',
+    'text': '📝 留言版'
+};
+let currentIndex = 0; // 預設停留在第一個分類
+
+// 左右切換分類邏輯
+function changeCategory(direction) {
+    // 計算新的索引值 (循環切換)
+    currentIndex += direction;
+    if (currentIndex < 0) currentIndex = categories.length - 1;
+    if (currentIndex >= categories.length) currentIndex = 0;
+
+    const currentCat = categories[currentIndex];
+
+    // 1. 更新上方標題
+    document.getElementById('category-title').innerText = categoryTitles[currentCat];
+
+    // 2. 隱藏所有面板，只顯示當前選中的面板
+    document.querySelectorAll('.options-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    document.getElementById(`panel-${currentCat}`).classList.add('active');
+}
+
+    // 2. 換裝邏輯 (完美隱形換裝版)
+    function customize(type, imgSrc, btnEl) {
+        const targetLayer = document.getElementById(`feature-${type}`);
+    
+        // 💡 防呆機制：如果點擊的是「現在已經戴著」的配件，就直接結束，不做任何動作
+        if (targetLayer.getAttribute('src') === imgSrc) return;
+
+        // 1. 切換按鈕選取狀態
+        const panel = document.getElementById(`panel-${type}`);
+        panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+        btnEl.classList.add('selected');
+
+        // 2. 小羊開心跳躍
+        const sheepGroup = document.getElementById('sheep-group');
+        sheepGroup.removeAttribute('animation__happy'); 
+        setTimeout(() => {
+            sheepGroup.setAttribute('animation__happy', {
+                property: 'position',
+                from: '0 0 0.5',
+                to: '0 0.08 0.5',
+                dir: 'alternate',
+                dur: 180,
+                loop: 2,
+                easing: 'easeOutQuad'
+            });
+        }, 10);
+
+        // 3. ⭐️ 核心修正：利用 A-Frame 內建事件等待材質載入
+        // 步驟 A：先隱藏圖層，避免露出白塊
+        targetLayer.setAttribute('visible', 'false');
+    
+        // 步驟 B：替換圖片路徑，這時 A-Frame 會開始在背景處理材質
+        targetLayer.setAttribute('src', imgSrc);
+
+        // 步驟 C：告訴 A-Frame「當材質完全貼好後，再叫醒我」
+        targetLayer.addEventListener('materialtextureloaded', function onLoaded() {
+            // 材質準備好了，重新顯示圖層！
+            targetLayer.setAttribute('visible', 'true');
+        
+            // 為了避免重複觸發，執行完就把這個監聽器移除
+            targetLayer.removeEventListener('materialtextureloaded', onLoaded);
+        });
+    }
+
+    // 3. 更新暱稱/留言 (Canvas 轉圖法)
+function updateNickname() {
+    const textValue = document.getElementById('nameField').value;
+    const textLayer = document.getElementById('layer-text');
+    
+    if (textValue.trim() !== "") {
+        // 1. 取得畫布
+        const canvas = document.getElementById('name-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 2. 清空畫布（確保每次都是透明背景）
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 3. 設定文字樣式 (這裡可以自訂顏色、大小)
+        ctx.fillStyle = '#555555'; 
+        ctx.font = 'bold 50px sans-serif'; // 直接用手機內建字體
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // 4. 在畫布正中間畫上文字
+        ctx.fillText(`- ${textValue} -`, canvas.width / 2, canvas.height / 2);
+        
+        // 5. 變魔術：把畫布轉成圖片 URL，直接換裝！
+        textLayer.setAttribute('src', canvas.toDataURL('image/png'));
+        textLayer.setAttribute('visible', 'true');
+    } else {
+        // 如果沒打字，就隱藏起來
+        textLayer.setAttribute('visible', 'false');
+    }
+}
+
+    // 4. 重新打扮 (修復版)
+    function resetAvatar() {
+        // 隱藏並清空所有配件圖層
+        ['eyes', 'hair', 'acc'].forEach(type => {
+            const layer = document.getElementById(`feature-${type}`);
+            if(layer) {
+                layer.removeAttribute('src');
+                layer.setAttribute('visible', 'false');
+            }
+        
+            // 清除按鈕的粉紅色選取狀態
+            const panel = document.getElementById(`panel-${type}`);
+            if(panel) {
+                panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            }
+        });
+
+        // 清除留言板文字與輸入框
+        document.getElementById('nameField').value = "";
+        document.getElementById('layer-text').setAttribute('visible', 'false');
+    
+        // 讓小羊往下頓一下表示重置成功
+        const sheepGroup = document.getElementById('sheep-group');
+        sheepGroup.removeAttribute('animation__happy'); 
+        setTimeout(() => {
+            sheepGroup.setAttribute('animation__happy', {
+                property: 'position',
+                from: '0 0 0.5',
+                to: '0 -0.05 0.5',
+                dir: 'alternate',
+                dur: 150,
+                loop: 2,
+                easing: 'easeOutQuad'
+            });
+        }, 10);
+    }
+
+    // 5. 拍照模式
+    function enterPhotoMode() {
+        document.getElementById('ar-ui').style.display = 'none';
+        setTimeout(() => {
+            document.addEventListener('pointerdown', exitPhotoMode, { once: true });
+        }, 300);
+    }
+
+    function exitPhotoMode() {
+        document.getElementById('ar-ui').style.display = 'block';
+    }
+    </script>
+</body>
+</html>
