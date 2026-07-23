@@ -411,21 +411,7 @@ window.customize = function(type, imgSrc, btnEl) {
             });
         }, 10);
     }
-// 步驟 A：先隱藏圖層，避免露出白塊
-    targetLayer.setAttribute('visible', 'false');
-    
-    // 步驟 B：替換圖片路徑，這時 A-Frame 會開始在背景處理材質
-    targetLayer.setAttribute('src', imgSrc);
 
-    // 步驟 C：告訴 A-Frame「當材質完全貼好後，再叫醒我」
-    targetLayer.addEventListener('materialtextureloaded', function onLoaded() {
-        // 材質準備好了，重新顯示圖層！
-        targetLayer.setAttribute('visible', 'true');
-        
-        // 為了避免重複觸發，執行完就把這個監聽器移除
-        targetLayer.removeEventListener('materialtextureloaded', onLoaded);
-    });
-}
     // 💡 終極防卡死換裝魔法 (雙重保險機制)
     targetLayer.setAttribute('visible', 'false');
     targetLayer.setAttribute('src', imgSrc);
