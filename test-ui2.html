@@ -138,6 +138,26 @@
     color: #666; 
     font-size: 14px; 
 }
+
+        /* 留言板按鈕群組 */
+.btn-group {
+    display: flex;
+    gap: 10px;
+    width: 90%;
+}
+.btn-group .apply-btn { 
+    flex: 2; /* 套用按鈕佔比較大的寬度 */
+} 
+.btn-group .clear-btn {
+    flex: 1; /* 清除按鈕稍微窄一點 */
+    padding: 12px;
+    background: #f1f2f6; /* 低調的淺灰色 */
+    color: #57606f;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+}
     </style>
 </head>
 
@@ -195,10 +215,13 @@
             </button>
         </div>
 
-        <!-- 留言面板 (維持單行輸入佈局) -->
+       <!-- 📝 留言面板 -->
         <div id="panel-text" class="options-panel text-layout">
             <input type="text" id="nameField" placeholder="輸入想說的話..." maxlength="10">
-            <button class="opt-btn apply-btn" onclick="updateNickname()">套用文字</button>
+            <div class="btn-group">
+                <button class="opt-btn apply-btn" onclick="updateNickname()">套用</button>
+                <button class="opt-btn clear-btn" onclick="clearNickname()">清除</button>
+            </div>
         </div>
         
     </div>
