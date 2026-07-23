@@ -371,7 +371,7 @@ window.changeCategory = function(direction) {
 window.customize = function(type, imgSrc, btnEl) {
     const targetLayer = document.getElementById(`feature-${type}`);
     const currentSrc = targetLayer.getAttribute('src');
-    const isVisible = targetLayer.getAttribute('visible') === 'true';
+    const isVisible = !!targetLayer.getAttribute('visible');
 
     // 1. 清除該分類下的所有選取狀態 (粉紅框)
     const panel = document.getElementById(`panel-${type}`);
