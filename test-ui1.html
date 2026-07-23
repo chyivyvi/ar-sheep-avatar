@@ -278,25 +278,42 @@ const categoryTitles = {
 };
 let currentIndex = 0; // 預設停留在第一個分類
 
-// 左右切換分類邏輯
-function changeCategory(direction) {
-    // 計算新的索引值 (循環切換)
-    currentIndex += direction;
-    if (currentIndex < 0) currentIndex = categories.length - 1;
-    if (currentIndex >= categories.length) currentIndex = 0;
+// 獨立的分類切換變數
+let currentCatIndex = 0; 
+const arCategories = ['eyes', 'hair', 'acc', 'text'];
+const arCategoryTitles = {
+    'eyes': '👀 眼神',
+    'hair': '💇‍♀️ 髮型',
+    'acc': '🎩 穿搭與配件',
+    'text': '📝 留言版'
+};
 
-    const currentCat = categories[currentIndex];
+// 掛載到 window 確保 HTML 裡的 onclick 絕對抓得到
+window.changeCategory = function(direction) {
+    // 1. 計算新的索引值 (循環切換)
+    currentCatIndex += direction;
+    
+    // 如果往左按到底，跳回最後一個；如果往右按到底，跳回第一個
+    if (currentCatIndex < 0) currentCatIndex = arCategories.length - 1;
+    if (currentCatIndex >= arCategories.length) currentCatIndex = 0;
 
-    // 1. 更新上方標題
-    document.getElementById('category-title').innerText = categoryTitles[currentCat];
+    const currentCat = arCategories[currentCatIndex];
 
-    // 2. 隱藏所有面板，只顯示當前選中的面板
+    // 2. 更新上方標題
+    const titleEl = document.getElementById('category-title');
+    if(titleEl) titleEl.innerText = arCategoryTitles[currentCat];
+
+    // 3. 隱藏所有面板
     document.querySelectorAll('.options-panel').forEach(panel => {
         panel.classList.remove('active');
     });
-    document.getElementById(`panel-${currentCat}`).classList.add('active');
-}
 
+    // 4. 顯示目前選中的面板
+    const targetPanel = document.getElementById(`panel-${currentCat}`);
+    if (targetPanel) {
+        targetPanel.classList.add('active');
+    }
+};
     // 2. 換裝邏輯 (完美隱形換裝版)
     function customize(type, imgSrc, btnEl) {
         const targetLayer = document.getElementById(`feature-${type}`);
