@@ -383,7 +383,11 @@ window.customize = function(type, imgSrc, btnEl) {
         bounce(0.04);
         return;
     }
-
+if (currentSrc === imgSrc && !isVisible) {
+    // 同一張圖只是重新顯示,不需要重新載入材質
+    targetLayer.setAttribute('visible', 'true');
+    return;
+}
     btnEl.classList.add('selected');
     bounce(0.08);
 
