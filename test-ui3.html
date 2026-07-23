@@ -371,34 +371,22 @@ window.changeCategory = function(direction) {
 window.customize = function(type, imgSrc, btnEl) {
     const targetLayer = document.getElementById(`feature-${type}`);
     const currentSrc = targetLayer.getAttribute('src');
-    const isVisible = !!targetLayer.getAttribute('visible');
+    const isVisible = targetLayer.getAttribute('visible') === true;
 
-    // 1. 清除該分類下的所有選取狀態 (粉紅框)
     const panel = document.getElementById(`panel-${type}`);
     if (panel) {
         panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
     }
 
-    // 2. 🎈 判斷情境：是「脫掉」嗎？
     if (currentSrc === imgSrc && isVisible) {
-        targetLayer.setAttribute('visible', 'false'); // 隱藏 3D 圖層
-        
-        // 脫掉的小跳躍回饋
-        const sheepGroup = document.getElementById('sheep-group');
-        if (sheepGroup) {
-            sheepGroup.removeAttribute('animation__happy'); 
-            setTimeout(() => {
-                sheepGroup.setAttribute('animation__happy', {
-                    property: 'position', from: '0 0 0.5', to: '0 0.04 0.5',
-                    dir: 'alternate', dur: 150, loop: 2, easing: 'easeOutQuad'
-                });
-            }, 10);
-        }
-        return; // 執行完「脫掉」就直接結束這回合
+        targetLayer.setAttribute('visible', 'false');
+        bounce(0.04);
+        return;
     }
 
-    // 3. 👕 情境：穿上新配件 (或把剛剛脫掉的穿回去)
-    btnEl.classList.add('selected'); // 加上粉紅框
+    btnEl.classList.add('selected');
+    bounce(0.08);
+
     // 先確保是隱藏的
     targetLayer.setAttribute('visible', 'false');
 
@@ -418,35 +406,18 @@ window.customize = function(type, imgSrc, btnEl) {
     targetLayer.addEventListener('materialtextureloaded', revealNextFrame);
     targetLayer.setAttribute('src', imgSrc);
 };
-    // 穿上的大跳躍回饋
+
+function bounce(height) {
     const sheepGroup = document.getElementById('sheep-group');
-    if (sheepGroup) {
-        sheepGroup.removeAttribute('animation__happy'); 
-        setTimeout(() => {
-            sheepGroup.setAttribute('animation__happy', {
-                property: 'position', from: '0 0 0.5', to: '0 0.08 0.5',
-                dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
-            });
-        }, 10);
-    }
-
-    // 💡 終極防卡死換裝魔法 (雙重保險機制)
-    targetLayer.setAttribute('visible', 'false');
-    targetLayer.setAttribute('src', imgSrc);
-    
-    // 建立一個專門負責顯示圖層的函式
-    let isLoaded = false;
-    const showLayer = function() {
-        if (isLoaded) return; // 確保只會執行一次，避免衝突
-        isLoaded = true;
-        targetLayer.setAttribute('visible', 'true');
-        targetLayer.removeEventListener('materialtextureloaded', showLayer);
-    };
-
-    // 保險 1：監聽 A-Frame 的材質載入事件
-    targetLayer.addEventListener('materialtextureloaded', showLayer);
-    
-
+    if (!sheepGroup) return;
+    sheepGroup.removeAttribute('animation__happy');
+    setTimeout(() => {
+        sheepGroup.setAttribute('animation__happy', {
+            property: 'position', from: '0 0 0.5', to: `0 ${height} 0.5`,
+            dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
+        });
+    }, 10);
+} 
 
     // 3. 更新暱稱/留言 (Canvas 轉圖法)
 window.updateNickname = function() {
