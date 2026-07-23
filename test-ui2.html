@@ -367,64 +367,77 @@ window.changeCategory = function(direction) {
         targetPanel.classList.add('active');
     }
 };
-    // 2. 換裝邏輯 (完美隱形換裝版)
-// 2. 換裝邏輯 (支援重複穿脫 + 隱形換裝)
+    // 2. 換裝邏輯 (支援快取、不閃爍、不卡死版)
 window.customize = function(type, imgSrc, btnEl) {
     const targetLayer = document.getElementById(`feature-${type}`);
     const currentSrc = targetLayer.getAttribute('src');
     const isVisible = targetLayer.getAttribute('visible') === 'true';
 
-    // 1. 處理 UI 按鈕視覺 (先清除該分類下所有按鈕的粉紅框)
+    // 1. 清除該分類下的所有選取狀態 (粉紅框)
     const panel = document.getElementById(`panel-${type}`);
     if (panel) {
         panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
     }
 
-    // 2. 判斷情境：是「脫掉」還是「穿上」？
+    // 2. 🎈 判斷情境：是「脫掉」嗎？
     if (currentSrc === imgSrc && isVisible) {
-        // 🎈 情境 A：脫掉 (點擊正在穿著且顯示中的配件)
-        targetLayer.setAttribute('visible', 'false');
+        targetLayer.setAttribute('visible', 'false'); // 隱藏 3D 圖層
         
-        // 脫下的專屬小跳躍
+        // 脫掉的小跳躍回饋
         const sheepGroup = document.getElementById('sheep-group');
+        if (sheepGroup) {
+            sheepGroup.removeAttribute('animation__happy'); 
+            setTimeout(() => {
+                sheepGroup.setAttribute('animation__happy', {
+                    property: 'position', from: '0 0 0.5', to: '0 0.04 0.5',
+                    dir: 'alternate', dur: 150, loop: 2, easing: 'easeOutQuad'
+                });
+            }, 10);
+        }
+        return; // 執行完「脫掉」就直接結束這回合
+    }
+
+    // 3. 👕 情境：穿上新配件 (或把剛剛脫掉的穿回去)
+    btnEl.classList.add('selected'); // 加上粉紅框
+
+    // 穿上的大跳躍回饋
+    const sheepGroup = document.getElementById('sheep-group');
+    if (sheepGroup) {
         sheepGroup.removeAttribute('animation__happy'); 
         setTimeout(() => {
             sheepGroup.setAttribute('animation__happy', {
-                property: 'position', from: '0 0 0.5', to: '0 0.04 0.5',
-                dir: 'alternate', dur: 150, loop: 2, easing: 'easeOutQuad'
+                property: 'position', from: '0 0 0.5', to: '0 0.08 0.5',
+                dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
             });
         }, 10);
-        
-        return; // 執行完脫掉就結束
     }
 
-    // 👕 情境 B：穿上 (包含穿新配件，或是把剛脫下的配件穿回去)
-    btnEl.classList.add('selected'); // 加上粉紅框
-
-    // 穿上的專屬大跳躍
-    const sheepGroup = document.getElementById('sheep-group');
-    sheepGroup.removeAttribute('animation__happy'); 
-    setTimeout(() => {
-        sheepGroup.setAttribute('animation__happy', {
-            property: 'position', from: '0 0 0.5', to: '0 0.08 0.5',
-            dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
-        });
-    }, 10);
-
-    // 3. 處理 3D 圖層顯示邏輯
-    if (currentSrc === imgSrc && !isVisible) {
-        // 💡 關鍵修復：如果是把「剛剛脫掉的同一件」穿回去
-        // 因為圖片沒變，不會觸發載入事件，所以直接把它顯示出來就好！
+    // 💡 終極防卡死換裝魔法 (雙重保險機制)
+    targetLayer.setAttribute('visible', 'false');
+    targetLayer.setAttribute('src', imgSrc);
+    
+    // 建立一個專門負責顯示圖層的函式
+    let isLoaded = false;
+    const showLayer = function() {
+        if (isLoaded) return; // 確保只會執行一次，避免衝突
+        isLoaded = true;
         targetLayer.setAttribute('visible', 'true');
+        targetLayer.removeEventListener('materialtextureloaded', showLayer);
+    };
+
+    // 保險 1：監聽 A-Frame 的材質載入事件
+    targetLayer.addEventListener('materialtextureloaded', showLayer);
+    
+    // 保險 2：原生瀏覽器快取檢查 (解決 A-Frame 快取 Bug 的關鍵！)
+    const tempImg = new Image();
+    tempImg.src = imgSrc;
+    
+    if (tempImg.complete) {
+        // 如果圖片已經在快取裡，不用等事件了，秒速強制顯示！
+        showLayer(); 
     } else {
-        // 💡 換裝魔法：穿上一件全新的配件
-        targetLayer.setAttribute('visible', 'false');
-        targetLayer.setAttribute('src', imgSrc);
-        
-        targetLayer.addEventListener('materialtextureloaded', function onLoaded() {
-            targetLayer.setAttribute('visible', 'true');
-            targetLayer.removeEventListener('materialtextureloaded', onLoaded);
-        });
+        // 萬一 A-Frame 的事件真的罷工，用原生 onload 救援
+        tempImg.onload = showLayer; 
     }
 };
 
