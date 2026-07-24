@@ -613,32 +613,47 @@ function flattenStructure() {
 }
 
 // 展開：依序把每一片牆/屋頂/地板從收合姿態彈回原位
+// 🔧 小工具：把 A-Frame 回傳的 vec3 物件轉回動畫需要的字串格式
+function vec3Str(v) {
+    if (typeof v === 'string') return v; // 萬一已經是字串就直接用
+    return `${v.x} ${v.y} ${v.z}`;
+}
+
 function unfoldRoom() {
     structureIds.forEach((id, i) => {
         const el = document.getElementById(id);
         const target = originalTransforms[id];
         if (!el || !target) return;
 
-        const delay = 80 + i * 60; // 每片交錯一點時間差，做出層次感
+        const delay = 80 + i * 60;
 
         setTimeout(() => {
             el.setAttribute('visible', 'true');
             el.setAttribute('animation__unfold_pos', {
                 property: 'position',
-                to: target.pos,
+                to: vec3Str(target.pos),   // ✅ 轉成字串
                 dur: 750,
                 easing: 'easeElasticOut',
                 elasticity: 380
             });
             el.setAttribute('animation__unfold_rot', {
                 property: 'rotation',
-                to: target.rot,
+                to: vec3Str(target.rot),   // ✅ 轉成字串
                 dur: 750,
                 easing: 'easeElasticOut',
                 elasticity: 380
             });
         }, delay);
     });
+
+    const furnitureStart = 80 + structureIds.length * 60 * 0.5;
+
+    furnitureIds.forEach((id, i) => {
+        setTimeout(() => popScale(id), furnitureStart + i * 120);
+    });
+
+    setTimeout(() => popScale('sheep-group'), furnitureStart + furnitureIds.length * 120 + 100);
+}
 
     // 家具跟羊，等牆體展開到一半後才彈出
     const furnitureStart = 80 + structureIds.length * 60 * 0.5;
