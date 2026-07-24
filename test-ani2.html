@@ -664,14 +664,31 @@ function popScale(id) {
 }
 
 // 綁定 MindAR 的偵測事件
+let lostTimer = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     capturePopupOriginals();
-    flattenStructure(); // 一開始先收合、隱形，等待掃描
+    flattenStructure();
 
     const targetEntity = document.querySelector('[mindar-image-target]');
     if (targetEntity) {
-        targetEntity.addEventListener('targetFound', unfoldRoom);
-        targetEntity.addEventListener('targetLost', flattenStructure); // 圖卡移出視野後重置，下次再掃可以重播
+        targetEntity.addEventListener('targetFound', () => {
+            // 🔑 只要重新偵測到，先取消任何「即將重置」的計時器
+            if (lostTimer) {
+                clearTimeout(lostTimer);
+                lostTimer = null;
+                return; // 這是抖動造成的瞬間丟失又立刻找回，不重播開場動畫
+            }
+            unfoldRoom();
+        });
+
+        targetEntity.addEventListener('targetLost', () => {
+            // 🔑 不要立刻收合，先等 1.2 秒確認是「真的」離開視野
+            lostTimer = setTimeout(() => {
+                flattenStructure();
+                lostTimer = null;
+            }, 1200);
+        });
     }
 });
     </script>
