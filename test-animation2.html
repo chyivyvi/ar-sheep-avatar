@@ -442,7 +442,7 @@ const AR_ENTRANCE_LAYERS = [
   { id: 'back_wall',            delay: 460 },
   { id: 'lamp',                 delay: 600 },
   { id: 'plant',                delay: 680 },
-  { id: 'sheep-group',          delay: 800, elastic: true }
+  { id: 'sheep-group',          delay: 800, elastic: true, startZ: 1 }
 ];
 
 // 1. 場景載入完成後，把每個圖層的 z 記下來，暫時歸零(貼在卡片上)
@@ -450,11 +450,13 @@ function prepareEntranceLayers() {
   AR_ENTRANCE_LAYERS.forEach(layer => {
     const el = document.getElementById(layer.id);
     if (!el) return;
-    const pos = el.getAttribute('position'); // {x,y,z}
+    const pos = el.getAttribute('position');
+    const startZ = layer.startZ !== undefined ? layer.startZ : 0;
     el.setAttribute('data-final-x', pos.x);
     el.setAttribute('data-final-y', pos.y);
     el.setAttribute('data-final-z', pos.z);
-    el.setAttribute('position', `${pos.x} ${pos.y} 0`);
+    el.setAttribute('data-start-z', startZ); // 記錄實際起點，等一下算方向要用
+    el.setAttribute('position', `${pos.x} ${pos.y} ${startZ}`);
   });
 }
 
@@ -466,28 +468,25 @@ function playEntranceAnimation() {
     const fx = parseFloat(el.getAttribute('data-final-x'));
     const fy = parseFloat(el.getAttribute('data-final-y'));
     const fz = parseFloat(el.getAttribute('data-final-z'));
-    if ([fx, fy, fz].some(Number.isNaN)) {
+    const sz = parseFloat(el.getAttribute('data-start-z'));
+    if ([fx, fy, fz, sz].some(Number.isNaN)) {
       console.warn(`圖層 ${layer.id} 尚未記錄初始位置，跳過進場動畫`);
       return;
     }
 
-    const travelDur = layer.elastic ? 650 : 480; // 推移花的時間(感受移動)
-    const settleDur = layer.elastic ? 480 : 300; // 落定回彈花的時間(感受Q彈)
-    // 讓推移段先衝過終點一點點(依z正負決定衝過頭的方向)，才有東西可以彈回來
-    const overshoot = fz === 0 ? 0.06 : fz + (fz > 0 ? 0.06 : -0.06);
+    const travelDur = layer.elastic ? 650 : 480;
+    const settleDur = layer.elastic ? 480 : 300;
+    const dir = Math.sign(fz - sz) || 1; // 改成依「實際移動方向」算，而不是只看終點正負
+    const overshoot = fz + 0.06 * dir;
 
     setTimeout(() => {
       el.setAttribute('animation__slide', {
-        property: 'position',
-        to: `${fx} ${fy} ${overshoot}`,
-        dur: travelDur,
-        easing: 'easeOutCubic'
+        property: 'position', to: `${fx} ${fy} ${overshoot}`,
+        dur: travelDur, easing: 'easeOutCubic'
       });
       el.setAttribute('animation__settle', {
-        property: 'position',
-        to: `${fx} ${fy} ${fz}`,
-        dur: settleDur,
-        delay: travelDur, // 接在推移段後面接著播
+        property: 'position', to: `${fx} ${fy} ${fz}`,
+        dur: settleDur, delay: travelDur,
         easing: layer.elastic ? 'easeOutElastic' : 'easeOutBack'
       });
     }, layer.delay);
