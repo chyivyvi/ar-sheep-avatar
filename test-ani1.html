@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+
+/* 1. 整個 UI 面板固定在最下方，還給相機上半部的視野 */
+#ar-ui {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    max-height: 45vh; /* 限制 UI 最高只能佔螢幕的 45% */
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+}
+
+/* 2. 頂部切換列 */
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f8f8;
+    padding: 10px 20px;
+    border-radius: 15px 15px 0 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+.nav-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #ff7675;
+    padding: 5px 15px;
+}
+
+/* 3. 隱藏與顯示的關鍵 (解決全部按鈕跑出來的問題) */
+.options-panel {
+    display: none !important;
+    padding: 15px;
+    overflow-y: auto;
+}
+.options-panel.active {
+    display: block !important;
+}
+
+/* 4. 超大圖文網格按鈕 */
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.grid-layout .opt-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fff0f0;
+    border: 2px solid #ffeaea;
+    border-radius: 12px;
+    padding: 10px;
+    aspect-ratio: 1 / 1;
+    transition: 0.2s;
+}
+.grid-layout .opt-btn.selected {
+    border-color: #ff7675;
+    background: #ffe5e5;
+    transform: scale(0.95);
+}
+.btn-icon {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+.btn-label {
+    font-size: 14px;
+    color: #555;
+    font-weight: bold;
+}
+
+/* 5. 留言面板專屬排版 */
+.text-layout {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.text-layout.options-panel {
+    display: none !important; /* 預設隱藏 */
+}
+.text-layout.options-panel.active {
+    display: flex !important; /* 啟動時顯示 */
+}
+.text-layout input { 
+    width: 90%; 
+    padding: 10px; 
+    border-radius: 8px; 
+    border: 1px solid #ccc; 
+    font-size: 16px; 
+    text-align: center; 
+}
+.apply-btn { 
+    width: 90%; 
+    padding: 12px; 
+    background: #ff7675; 
+    color: white; 
+    border: none; 
+    border-radius: 8px; 
+    font-size: 16px; 
+    font-weight: bold; 
+}
+
+/* 6. 底部功能列 */
+.bottom-actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+.action-btn { 
+    padding: 8px 15px; 
+    border-radius: 20px; 
+    border: 1px solid #ddd; 
+    background: white; 
+    color: #666; 
+    font-size: 14px; 
+}
+
+        /* 留言板按鈕群組 */
+.btn-group {
+    display: flex;
+    gap: 10px;
+    width: 90%;
+}
+.btn-group .apply-btn { 
+    flex: 2; /* 套用按鈕佔比較大的寬度 */
+} 
+.btn-group .clear-btn {
+    flex: 1; /* 清除按鈕稍微窄一點 */
+    padding: 12px;
+    background: #f1f2f6; /* 低調的淺灰色 */
+    color: #57606f;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+}
+    </style>
+</head>
+
+<body>
+    <!-- 用來動態產生中文字的隱藏畫布 -->
+    <canvas id="name-canvas" width="512" height="128" style="display:none;"></canvas>
+    
+   <!-- 📱 全新 AR 操作介面 -->
+<div id="ar-ui">
+    
+    <!-- 1. 頂部分類切換列 -->
+    <div class="category-header">
+        <button class="nav-btn" onclick="changeCategory(-1)">◀</button>
+        <span id="category-title">👀 眼神</span>
+        <button class="nav-btn" onclick="changeCategory(1)">▶</button>
+    </div>
+
+    <!-- 2. 下方面板區 -->
+    <div id="panels-container">
+        
+        <!-- 眼神面板 (網格佈局) -->
+        <div id="panel-eyes" class="options-panel active grid-layout">
+            <!-- 示範圖文按鈕：請將 img src 換成你輸出的 UI 小圖示 -->
+            <button class="opt-btn" onclick="customize('eyes', 'assets/eyes1.png', this)">
+                <img src="assets/ui_eyes1.png" alt="款式 A" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">微笑眼</span>
+            </button>
+            <button class="opt-btn" onclick="customize('eyes', 'assets/eyes2.png', this)">
+                <img src="assets/ui_eyes2.png" alt="款式 B" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">星星眼</span>
+            </button>
+        </div>
+
+        <!-- 髮型面板 (網格佈局) -->
+        <div id="panel-hair" class="options-panel grid-layout">
+            <button class="opt-btn" onclick="customize('hair', 'assets/hair1.png', this)">
+                <img src="assets/ui_hair1.png" alt="髮型 A" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">捲捲毛</span>
+            </button>
+            <button class="opt-btn" onclick="customize('hair', 'assets/hair2.png', this)">
+                <img src="assets/ui_hair2.png" alt="髮型 B" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">龐克頭</span>
+            </button>
+        </div>
+
+        <!-- 配件面板 (網格佈局) -->
+        <div id="panel-acc" class="options-panel grid-layout">
+            <button class="opt-btn" onclick="customize('acc', 'assets/hat1.png', this)">
+                <img src="assets/ui_hat1.png" alt="配件 1" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">魔術禮帽</span>
+            </button>
+            <button class="opt-btn" onclick="customize('acc', 'assets/hat2.png', this)">
+                <img src="assets/ui_hat2.png" alt="配件 2" class="btn-icon" onerror="this.style.display='none'">
+                <span class="btn-label">獵鹿帽</span>
+            </button>
+        </div>
+
+       <!-- 📝 留言面板 -->
+        <div id="panel-text" class="options-panel text-layout">
+            <input type="text" id="nameField" placeholder="輸入想說的話..." maxlength="10">
+            <div class="btn-group">
+                <button class="opt-btn apply-btn" onclick="updateNickname()">套用</button>
+                <button class="opt-btn clear-btn" onclick="clearNickname()">清除</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- 3. 最底部的功能列 -->
+    <div class="bottom-actions">
+        <!-- 保留原本的重新打扮與拍照按鈕 -->
+        <button class="action-btn" onclick="resetAvatar()">🔄 重新打扮</button>
+        <button class="action-btn" onclick="enterPhotoMode()">📷 隱藏介面</button>
+    </div>
+</div>
+
+    <!-- AR 場景 -->
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; 
+                       autoStart: true; 
+                       uiLoading: no; 
+                       filterMinCF: 0.0001; 
+                       filterBeta: 0.001; 
+                       missTolerance: 5;" 
+         color-space="sRGB" 
+         renderer="colorManagement: true" 
+         vr-mode-ui="enabled: false" 
+         device-orientation-permission-ui="enabled: false">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+           <!-- 🏠 房間與家具總群組 (統一在這裡控制整個房間的縮放與位置) -->
+<a-entity id="ar-room" scale="1 1 1" position="0 0 1">
+    
+    <!-- ============================== -->
+    <!-- 🧱 第一部分：房間基礎結構 (門、牆、地板、屋頂) -->
+    <!-- ============================== -->
+    <a-entity id="room-structure">
+        <!-- 1. 前景門 -->
+        <a-image id="wall-door" src="assets/door.png" material="alphaTest: 0.5; side: double" position="0 0.25 0" rotation="0 0 0" width="1" height="1.5"></a-image>
+
+        <!-- 2. 天花板/屋頂 -->
+        <a-image id="roof-left" src="assets/roof.png" material="alphaTest: 0.5; side: double" 
+           position="-0.25 0.75 0" rotation="0 -90 0" width="1.1" height="0.8" visible="false"
+           animation__show="property: visible; to: true; delay: 400; startEvents: popup"
+           animation__pos="property: position; to: -0.25 0.75 -0.5; dur: 800; delay: 400; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: -45 -90 0; dur: 800; delay: 400; easing: easeOutBack; startEvents: popup">
+        </a-image>
+        <a-image id="roof-right" src="assets/roof.png" material="alphaTest: 0.5; side: double" 
+           position="0.25 0.75 0" rotation="0 -90 0" width="1.1" height="0.8" visible="false"
+           animation__show="property: visible; to: true; delay: 400; startEvents: popup"
+           animation__pos="property: position; to: 0.25 0.75 -0.5; dur: 800; delay: 400; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: -45 90 0; dur: 800; delay: 400; easing: easeOutBack; startEvents: popup">
+        </a-image>
+        
+        <!-- 3. 地板 -->
+        <a-image id="floor-base" src="assets/floor.png" material="alphaTest: 0.5" 
+           position="0 -0.5 0" rotation="0 0 0" width="1" height="1" visible="false"
+           animation__show="property: visible; to: true; delay: 0; startEvents: popup"
+           animation__pos="property: position; to: 0 -0.5 -0.5; dur: 800; delay: 0; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: -90 0 0; dur: 800; delay: 0; easing: easeOutBack; startEvents: popup">
+        </a-image>
+        <a-image id="floor-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
+           position="0 -0.5 0" rotation="0 0 0" width="1" height="1" visible="false"
+           animation__show="property: visible; to: true; delay: 0; startEvents: popup"
+           animation__pos="property: position; to: 0 -0.501 -0.5; dur: 800; delay: 0; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: 90 0 0; dur: 800; delay: 0; easing: easeOutBack; startEvents: popup">
+        </a-image>
+     
+        <!-- 4. 左牆 -->
+        <a-image id="left_wall" src="assets/left_wall.png" material="alphaTest: 0.5" 
+           position="-0.5 0 0" rotation="0 0 0" width="1" height="1" visible="false"
+           animation__show="property: visible; to: true; delay: 200; startEvents: popup"
+           animation__pos="property: position; to: -0.5 0 -0.5; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: 0 90 0; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup">
+        </a-image>
+        <a-image id="wall-left-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
+           position="-0.5 0 0" rotation="0 0 0" width="1" height="1" visible="false"
+           animation__show="property: visible; to: true; delay: 200; startEvents: popup"
+           animation__pos="property: position; to: -0.501 0 -0.5; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: 0 -90 0; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup">
+        </a-image>
+
+        <!-- 5. 右牆 -->
+        <a-image id="right_wall" src="assets/right_wall.png" material="alphaTest: 0.5" 
+           position="0.5 0 0" rotation="0 0 0" width="1" height="1" visible="false"
+           animation__show="property: visible; to: true; delay: 200; startEvents: popup"
+           animation__pos="property: position; to: 0.5 0 -0.5; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: 0 -90 0; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup">
+        </a-image>
+        <a-image id="wall-right-exterior" src="assets/outer_brick.png" material="alphaTest: 0.5" 
+           position="0.5 0 0" rotation="0 0 0" width="1" height="1" visible="false"
+           animation__show="property: visible; to: true; delay: 200; startEvents: popup"
+           animation__pos="property: position; to: 0.501 0 -0.5; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup"
+           animation__rot="property: rotation; to: 0 90 0; dur: 800; delay: 200; easing: easeOutBack; startEvents: popup">
+        </a-image>
+
+        <!-- 6. 背牆 -->
+        <a-image id="back_wall" src="assets/back_wall.png" material="alphaTest: 0.5; side: double" position="0 0.25 -1" rotation="0 0 0" width="1" height="1.5"></a-image>
+    </a-entity>
+
+    <!-- ============================== -->
+    <!-- 🛋️ 第二部分：室內家具群組 (燈、時鐘、盆栽、桌子) -->
+    <!-- 💡 空間深度提示：前景門是 0，背牆是 -1 -->
+    <!-- ============================== -->
+    <a-entity id="furniture-group">
+        
+        <!-- 原本的吊燈 (Z: -0.5，懸掛在房間正中間) -->
+        <a-image id="lamp" src="assets/lamp.png" material="alphaTest: 0.5; side: double" position="0 0.5 -0.5" width="1" height="1"></a-image>
+
+        <!-- 掛在背牆的時鐘 (Z: -0.99，比背牆稍微往前 0.01，避免兩張圖疊在一起產生閃爍破圖) -->
+        <!-- <a-image id="wall-clock" src="assets/clock.png" material="alphaTest: 0.5" position="0 0 -0.99" width="1" height="1"></a-image>-->
+
+        <!-- 放後方的盆栽 (Z: -0.7，靠近背牆，XY 軸移到畫面左下角) -->
+        <a-image id="plant" src="assets/plant.png" material="alphaTest: 0.5" position="0 0 -0.7" width="1" height="1"></a-image>
+
+        <!-- 放前面的桌子 (Z: -0.2，靠近前面的門，營造前中後景的層次) -->
+        <!-- <a-image id="desk" src="assets/desk.png" material="alphaTest: 0.5" position="0 0 -0.2" width="1" height="1"></a-image>-->
+        
+    </a-entity>
+
+</a-entity>
+
+    <!-- 🐑 小羊紙娃娃群組 -->
+    <a-entity id="sheep-group" position="0 0 0" scale="1 1 1"
+          animation__pos="property: position; to: 0 0 0.5; dur: 1000; easing: easeOutElastic; startEvents: popup">
+      <!-- 主體（身體） -->
+      <a-image id="sheep-body" src="assets/sheep_body.png" material="alphaTest: 0.5" position="0 0 0" width="1" height="1"></a-image>
+    
+      <!-- 動態部件 (保持原來的彈性寫法，只留三個圖層) -->
+      <a-image id="feature-eyes" position="0 0 0.01" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
+      <a-image id="feature-hair" position="0 0 0.02" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
+      <a-image id="feature-acc"  position="0 0 0.03" width="1" height="1" material="alphaTest: 0.5" visible="false"></a-image>
+
+      <!-- 將留言板改成圖片接收器 (位置調高到頭頂) -->
+    　<a-image id="layer-text" position="0 0.55 0.1" width="2.5" height="0.625" material="alphaTest: 0.1" visible="false"></a-image>
+</a-entity>
+        
+</a-entity>
+
+        </a-entity>
+    </a-scene>
+
+    <script>
+    // 定義分類順序與標題
+const categories = ['eyes', 'hair', 'acc', 'text'];
+const categoryTitles = {
+    'eyes': '👀 眼神',
+    'hair': '💇‍♀️ 髮型',
+    'acc': '🎩 穿搭與配件',
+    'text': '📝 留言版'
+};
+let currentIndex = 0; // 預設停留在第一個分類
+
+// 獨立的分類切換變數
+let currentCatIndex = 0; 
+const arCategories = ['eyes', 'hair', 'acc', 'text'];
+const arCategoryTitles = {
+    'eyes': '👀 眼神',
+    'hair': '💇‍♀️ 髮型',
+    'acc': '🎩 穿搭與配件',
+    'text': '📝 留言版'
+};
+
+// 掛載到 window 確保 HTML 裡的 onclick 絕對抓得到
+window.changeCategory = function(direction) {
+    // 1. 計算新的索引值 (循環切換)
+    currentCatIndex += direction;
+    
+    // 如果往左按到底，跳回最後一個；如果往右按到底，跳回第一個
+    if (currentCatIndex < 0) currentCatIndex = arCategories.length - 1;
+    if (currentCatIndex >= arCategories.length) currentCatIndex = 0;
+
+    const currentCat = arCategories[currentCatIndex];
+
+    // 2. 更新上方標題
+    const titleEl = document.getElementById('category-title');
+    if(titleEl) titleEl.innerText = arCategoryTitles[currentCat];
+
+    // 3. 隱藏所有面板
+    document.querySelectorAll('.options-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+
+    // 4. 顯示目前選中的面板
+    const targetPanel = document.getElementById(`panel-${currentCat}`);
+    if (targetPanel) {
+        targetPanel.classList.add('active');
+    }
+};
+    // 2. 換裝邏輯 (支援快取、不閃爍、不卡死版)
+const layerTokens = {}; // 放在 customize 外面,記錄每個配件類別目前的最新版本號
+
+window.customize = function(type, imgSrc, btnEl) {
+    const targetLayer = document.getElementById(`feature-${type}`);
+    const currentSrc = targetLayer.getAttribute('src');
+    const isVisible = targetLayer.getAttribute('visible') === true;
+    const panel = document.getElementById(`panel-${type}`);
+    if (panel) {
+        panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    // 🔑 每次呼叫都發新號碼牌，讓舊的非同步回呼自動失效
+    layerTokens[type] = (layerTokens[type] || 0) + 1;
+    const myToken = layerTokens[type];
+
+    if (currentSrc === imgSrc && isVisible) {
+        targetLayer.setAttribute('visible', 'false');
+        bounce(0.04);
+        return;
+    }
+
+    if (currentSrc === imgSrc && !isVisible) {
+        targetLayer.setAttribute('visible', 'true');
+        bounce(0.08); // ✅ 補回漏掉的跳躍
+        return;
+    }
+
+    btnEl.classList.add('selected');
+    bounce(0.08);
+    targetLayer.setAttribute('visible', 'false');
+
+    const revealNextFrame = function () {
+        if (layerTokens[type] !== myToken) return; // 過期的回呼，直接放棄
+        requestAnimationFrame(() => {
+            if (layerTokens[type] !== myToken) return;
+            requestAnimationFrame(() => {
+                if (layerTokens[type] !== myToken) return;
+                targetLayer.setAttribute('visible', 'true');
+            });
+        });
+        targetLayer.removeEventListener('materialtextureloaded', revealNextFrame);
+    };
+
+    targetLayer.addEventListener('materialtextureloaded', revealNextFrame);
+    targetLayer.setAttribute('src', imgSrc);
+};
+
+function bounce(height) {
+    const sheepGroup = document.getElementById('sheep-group');
+    if (!sheepGroup) return;
+    sheepGroup.removeAttribute('animation__happy');
+    setTimeout(() => {
+        sheepGroup.setAttribute('animation__happy', {
+            property: 'position', from: '0 0 0.5', to: `0 ${height} 0.5`,
+            dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
+        });
+    }, 10);
+} 
+
+    // 3. 更新暱稱/留言 (Canvas 轉圖法)
+window.updateNickname = function() {
+    const inputField = document.getElementById('nameField');
+    const textEl = document.getElementById('layer-text'); 
+    const canvas = document.getElementById('name-canvas');
+
+    // 防呆機制：確保輸入框、3D 圖層、畫布都存在
+    if (textEl && inputField && canvas) {
+        const text = inputField.value.trim();
+        
+        // 如果使用者沒打字就按套用，就當作清除
+        if (text === "") {
+            textEl.setAttribute('visible', 'false');
+            return;
+        }
+
+        // 🎨 --- Canvas 繪製中文字魔法 ---
+        const ctx = canvas.getContext('2d');
+        // 清空畫布 (保持背景透明)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 設定文字樣式 (這裡你可以自己改喜歡的顏色喔！)
+        ctx.fillStyle = '#ff7675'; // 填滿顏色 (深粉紅)
+        ctx.font = 'bold 60px sans-serif'; // 字體粗細與大小
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // 加上白色邊框，讓字在任何背景下都能看清楚
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = 'white';
+        ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+        
+        // 畫出文字本體
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        // 將畫好的字轉成 PNG 圖片格式
+        const dataURL = canvas.toDataURL('image/png');
+        
+        // 套用到 a-image 上並顯示出來
+        textEl.setAttribute('src', dataURL);
+        textEl.setAttribute('visible', 'true');
+        // -----------------------------
+        
+        // 互動回饋：套用文字時也讓小羊開心跳一下
+        const sheepGroup = document.getElementById('sheep-group');
+        if (sheepGroup) {
+            sheepGroup.removeAttribute('animation__happy'); 
+            setTimeout(() => {
+                sheepGroup.setAttribute('animation__happy', {
+                    property: 'position',
+                    from: '0 0 0.5',
+                    to: '0 0.08 0.5',
+                    dir: 'alternate',
+                    dur: 180,
+                    loop: 2,
+                    easing: 'easeOutQuad'
+                });
+            }, 10);
+        }
+    } else {
+        console.warn('找不到畫布或輸入框元件！');
+    }
+};
+
+// 🆕 全新：清除留言功能 (相容圖片模式)
+window.clearNickname = function() {
+    const inputField = document.getElementById('nameField');
+    const textEl = document.getElementById('layer-text'); 
+    
+    if (inputField) inputField.value = ''; // 1. 清空手機鍵盤輸入框的字
+    if (textEl) {
+        textEl.removeAttribute('src'); // 清除圖片暫存
+        textEl.setAttribute('visible', 'false'); // 2. 隱藏 3D 畫面上的字
+    }
+};
+
+    // 4. 重新打扮 (修復版)
+    function resetAvatar() {
+        // 隱藏並清空所有配件圖層
+        ['eyes', 'hair', 'acc'].forEach(type => {
+            const layer = document.getElementById(`feature-${type}`);
+            if(layer) {
+                layer.removeAttribute('src');
+                layer.setAttribute('visible', 'false');
+            }
+        
+            // 清除按鈕的粉紅色選取狀態
+            const panel = document.getElementById(`panel-${type}`);
+            if(panel) {
+                panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            }
+        });
+
+        // 清除留言板文字與輸入框
+        document.getElementById('nameField').value = "";
+        document.getElementById('layer-text').setAttribute('visible', 'false');
+    
+        // 讓小羊往下頓一下表示重置成功
+        const sheepGroup = document.getElementById('sheep-group');
+        sheepGroup.removeAttribute('animation__happy'); 
+        setTimeout(() => {
+            sheepGroup.setAttribute('animation__happy', {
+                property: 'position',
+                from: '0 0 0.5',
+                to: '0 -0.05 0.5',
+                dir: 'alternate',
+                dur: 150,
+                loop: 2,
+                easing: 'easeOutQuad'
+            });
+        }, 10);
+    }
+
+    // 5. 拍照模式
+    function enterPhotoMode() {
+        document.getElementById('ar-ui').style.display = 'none';
+        setTimeout(() => {
+            document.addEventListener('pointerdown', exitPhotoMode, { once: true });
+        }, 300);
+    }
+
+    function exitPhotoMode() {
+        document.getElementById('ar-ui').style.display = 'block';
+    }
+    // 6. 開場立體書動畫觸發機制
+      document.addEventListener("DOMContentLoaded", function() {
+        const target = document.querySelector('[mindar-image-target]');
+    
+        if (target) {
+            target.addEventListener('targetFound', () => {
+                console.log("辨識成功！啟動立體卡片開場動畫！");
+            
+                // 抓取所有綁定 popup 動畫的物件
+                const animatedElements = document.querySelectorAll('[animation__pos], [animation__rot], [animation__show]');
+                animatedElements.forEach(el => {
+                    el.emit('popup');
+                });
+            });
+        }
+    });
+    </script>
+</body>
+</html>
