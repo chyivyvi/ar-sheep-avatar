@@ -467,6 +467,11 @@ function playEntranceAnimation() {
     const fy = el.getAttribute('data-final-y');
     const fz = el.getAttribute('data-final-z');
 
+    if (fx === null || fy === null || fz === null) {
+      console.warn(`圖層 ${layer.id} 尚未記錄初始位置，跳過進場動畫`);
+      return;
+    }
+
     setTimeout(() => {
       el.setAttribute('animation__enter', {
         property: 'position',
@@ -478,14 +483,19 @@ function playEntranceAnimation() {
   });
 }
 
-// 3. 綁定事件
-document.querySelector('a-scene').addEventListener('loaded', prepareEntranceLayers);
+// 3. 綁定事件（修正版：避免 loaded 事件已觸發過但監聽器還沒掛上的競速問題）
+const sceneEl = document.querySelector('a-scene');
+
+if (sceneEl.hasLoaded) {
+  prepareEntranceLayers();
+} else {
+  sceneEl.addEventListener('loaded', prepareEntranceLayers);
+}
 
 const targetEntity = document.querySelector('[mindar-image-target]');
 targetEntity.addEventListener('targetFound', playEntranceAnimation);
-
-// 選用：掃描目標離開視野時歸零，讓下次重新掃到會再演出一次進場動畫
 targetEntity.addEventListener('targetLost', prepareEntranceLayers);
+        
     // 3. 更新暱稱/留言 (Canvas 轉圖法)
 window.updateNickname = function() {
     const inputField = document.getElementById('nameField');
