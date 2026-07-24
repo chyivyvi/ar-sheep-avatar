@@ -391,7 +391,7 @@ window.customize = function(type, imgSrc, btnEl) {
 
     if (currentSrc === imgSrc && !isVisible) {
         targetLayer.setAttribute('visible', 'true');
-        bounce(0.08); // ✅ 補回漏掉的跳躍
+        bounce(0.08); 
         return;
     }
 
@@ -421,7 +421,7 @@ function bounce(height) {
     sheepGroup.removeAttribute('animation__happy');
     setTimeout(() => {
         sheepGroup.setAttribute('animation__happy', {
-            property: 'position', from: '0 0 0.5', to: `0 ${height} 0.5`,
+            property: 'position', from: '0 0 0', to: `0 ${height} 0.5`,
             dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
         });
     }, 10);
@@ -477,8 +477,8 @@ window.updateNickname = function() {
             setTimeout(() => {
                 sheepGroup.setAttribute('animation__happy', {
                     property: 'position',
-                    from: '0 0 0.5',
-                    to: '0 0.08 0.5',
+                    from: '0 0 0',
+                    to: '0 0.08 0',
                     dir: 'alternate',
                     dur: 180,
                     loop: 2,
@@ -530,8 +530,8 @@ window.clearNickname = function() {
         setTimeout(() => {
             sheepGroup.setAttribute('animation__happy', {
                 property: 'position',
-                from: '0 0 0.5',
-                to: '0 -0.05 0.5',
+                from: '0 0 0',
+                to: '0 -0.05 0',
                 dir: 'alternate',
                 dur: 150,
                 loop: 2,
