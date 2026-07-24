@@ -421,7 +421,7 @@ function bounce(height) {
     sheepGroup.removeAttribute('animation__happy');
     setTimeout(() => {
         sheepGroup.setAttribute('animation__happy', {
-            property: 'position', from: '0 0 0', to: `0 ${height} 0.5`,
+            property: 'position', from: '0 0 0', to: `0 ${height} 0`,
             dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
         });
     }, 10);
