@@ -429,20 +429,21 @@ function bounce(height) {
 // delay 是相對於 targetFound 那一刻的錯開時間(ms)
 // elastic:true 用彈性更大的 easing
 const AR_ENTRANCE_LAYERS = [
-  { id: 'roof-left',            delay: 0 },
-  { id: 'roof-right',           delay: 0 },
-  { id: 'floor-base',           delay: 0 },
-  { id: 'floor-exterior',       delay: 0 },
-  { id: 'left_wall',            delay: 0 },
-  { id: 'wall-left-exterior',   delay: 0 },
-  { id: 'right_wall',           delay: 0 },
-  { id: 'wall-right-exterior',  delay: 0 },
-  { id: 'wall-door',            delay: 140 },
-  { id: 'back_wall',            delay: 220 },
-  { id: 'lamp',                 delay: 300 },
-  { id: 'plant',                delay: 460 },
-  { id: 'sheep-group',          delay: 680, elastic: true }
+  { id: 'wall-door',            delay: 0   },
+  { id: 'roof-left',            delay: 140 },
+  { id: 'roof-right',           delay: 140 },
+  { id: 'floor-base',           delay: 140 },
+  { id: 'floor-exterior',       delay: 140 },
+  { id: 'left_wall',            delay: 140 },
+  { id: 'wall-left-exterior',   delay: 140 },
+  { id: 'right_wall',           delay: 140 },
+  { id: 'wall-right-exterior',  delay: 140 },
+  { id: 'back_wall',            delay: 460 },
+  { id: 'lamp',                 delay: 600 },
+  { id: 'plant',                delay: 680 },
+  { id: 'sheep-group',          delay: 800, elastic: true }
 ];
+        
 function playEntranceAnimation() {
   AR_ENTRANCE_LAYERS.forEach(layer => {
     const el = document.getElementById(layer.id);
