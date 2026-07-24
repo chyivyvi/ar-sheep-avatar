@@ -17,7 +17,7 @@
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
     z-index: 9999;
-    max-height: 45vh; /* 限制 UI 最高只能佔螢幕的 45% */
+    max-height: 30vh; /* 限制 UI 最高只能佔螢幕的 45% */
     display: flex;
     flex-direction: column;
     padding-bottom: 20px;
@@ -206,11 +206,11 @@
         <!-- 配件面板 (網格佈局) -->
         <div id="panel-acc" class="options-panel grid-layout">
             <button class="opt-btn" onclick="customize('acc', 'assets/hat1.png', this)">
-                <img src="assets/ui_hat1.png" alt="配件 1" class="btn-icon" onerror="this.style.display='none'">
+                <img src="assets/hat1.png" alt="配件 1" class="btn-icon" onerror="this.style.display='none'">
                 <span class="btn-label">魔術禮帽</span>
             </button>
             <button class="opt-btn" onclick="customize('acc', 'assets/hat2.png', this)">
-                <img src="assets/ui_hat2.png" alt="配件 2" class="btn-icon" onerror="this.style.display='none'">
+                <img src="assets/hat2.png" alt="配件 2" class="btn-icon" onerror="this.style.display='none'">
                 <span class="btn-label">獵鹿帽</span>
             </button>
         </div>
