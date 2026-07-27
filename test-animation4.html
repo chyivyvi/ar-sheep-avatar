@@ -188,6 +188,16 @@
 <body>
     <!-- 用來動態產生中文字的隱藏畫布 -->
     <canvas id="name-canvas" width="512" height="128" style="display:none;"></canvas>
+
+    <!-- 👆 等待點擊展開的提示 -->
+<div id="tap-hint" style="
+    position:fixed; top:38%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(255,255,255,0.92); padding:10px 22px; border-radius:30px;
+    font-size:16px; font-weight:bold; color:#ff7675;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:5000; display:none;
+    pointer-events:none;">
+    輕觸畫面展開房間 ✨
+</div> 
     
    <!-- 📱 全新 AR 操作介面 -->
 <div id="ar-ui">
@@ -348,21 +358,123 @@
 let hasRevealed = false;
 let lostTimer = null;
 
+function showWaitingHint() {
+  const hint = document.getElementById('tap-hint');
+  if (hint) hint.style.display = 'block';
+}
+function hideWaitingHint() {
+  const hint = document.getElementById('tap-hint');
+  if (hint) hint.style.display = 'none';
+}
+function hideAllLayers() {
+  AR_ENTRANCE_LAYERS.forEach(layer => {
+    const el = document.getElementById(layer.id);
+    if (el) el.setAttribute('visible', 'false');
+  });
+}
+function showAllLayers() {
+  AR_ENTRANCE_LAYERS.forEach(layer => {
+    const el = document.getElementById(layer.id);
+    if (el) el.setAttribute('visible', 'true');
+  });
+}
+function onTapToReveal() {
+  if (hasRevealed) return;
+  hasRevealed = true;
+  hideWaitingHint();
+  showAllLayers();
+  playEntranceAnimation();
+}
+
+// === 登場動畫設定 ===
+const AR_ENTRANCE_LAYERS = [
+  { id: 'back_wall',            delay: 0 },
+  { id: 'wall-door',            delay: 140 },
+  { id: 'roof-left',            delay: 140 },
+  { id: 'roof-right',           delay: 140 },
+  { id: 'floor-base',           delay: 140 },
+  { id: 'floor-exterior',       delay: 140 },
+  { id: 'left_wall',            delay: 300 },
+  { id: 'wall-left-exterior',   delay: 300 },
+  { id: 'right_wall',           delay: 300 },
+  { id: 'wall-right-exterior',  delay: 300 },
+  { id: 'lamp',                 delay: 460 },
+  { id: 'plant',                delay: 680 },
+  { id: 'sheep-group',          delay: 800, elastic: true }
+];
+
+function prepareEntranceLayers() {
+  AR_ENTRANCE_LAYERS.forEach(layer => {
+    const el = document.getElementById(layer.id);
+    if (!el) return;
+    const pos = el.getAttribute('position');
+    el.setAttribute('data-final-x', pos.x);
+    el.setAttribute('data-final-y', pos.y);
+    el.setAttribute('data-final-z', pos.z);
+    el.setAttribute('position', `${pos.x} ${pos.y} 0`);
+  });
+}
+
+function playEntranceAnimation() {
+  AR_ENTRANCE_LAYERS.forEach(layer => {
+    const el = document.getElementById(layer.id);
+    if (!el) return;
+    const fx = parseFloat(el.getAttribute('data-final-x'));
+    const fy = parseFloat(el.getAttribute('data-final-y'));
+    const fz = parseFloat(el.getAttribute('data-final-z'));
+    if ([fx, fy, fz].some(Number.isNaN)) {
+      console.warn(`圖層 ${layer.id} 尚未記錄初始位置，跳過進場動畫`);
+      return;
+    }
+    const travelDur = layer.elastic ? 650 : 480;
+    const settleDur = layer.elastic ? 480 : 300;
+    const overshoot = fz === 0 ? 0.06 : fz + (fz > 0 ? 0.06 : -0.06);
+
+    setTimeout(() => {
+      el.setAttribute('animation__slide', {
+        property: 'position', to: `${fx} ${fy} ${overshoot}`,
+        dur: travelDur, easing: 'easeOutCubic'
+      });
+      el.setAttribute('animation__settle', {
+        property: 'position', to: `${fx} ${fy} ${fz}`,
+        dur: settleDur, delay: travelDur,
+        easing: layer.elastic ? 'easeOutElastic' : 'easeOutBack'
+      });
+    }, layer.delay);
+  });
+}
+
+// 場景載入後：先記錄好每個圖層的真正位置，然後全部隱藏、等待點擊
+const sceneEl = document.querySelector('a-scene');
+function initialSetup() {
+  prepareEntranceLayers();
+  hideAllLayers();
+}
+if (sceneEl.hasLoaded) {
+  initialSetup();
+} else {
+  sceneEl.addEventListener('loaded', initialSetup);
+}
+
+const targetEntity = document.querySelector('[mindar-image-target]');
+
 targetEntity.addEventListener('targetFound', () => {
   clearTimeout(lostTimer); // 追蹤瞬斷又找回來，取消原本排定的重置
   if (!hasRevealed) {
-    showWaitingHint(); // 顯示「輕觸展開」提示，圖層維持 visible:false
+    showWaitingHint();
   }
-  // 如果 hasRevealed 已經是 true，代表使用者之前已經點開過，什麼都不用做，讓它繼續顯示
 });
 
 targetEntity.addEventListener('targetLost', () => {
   lostTimer = setTimeout(() => {
     hasRevealed = false;
-    hideAllLayers();     // 真的離開視野夠久，才收回扁平/隱藏狀態
+    hideAllLayers();
     hideWaitingHint();
   }, 800);
 });
+
+// 點擊相機畫面（a-scene）才觸發展開，不會誤觸底下的操作面板按鈕
+sceneEl.addEventListener('click', onTapToReveal);
 
 function onTapToReveal() {
   if (hasRevealed) return;
