@@ -444,7 +444,6 @@ function playEntranceAnimation() {
   });
 }
 
-// 場景載入後：先記錄好每個圖層的真正位置，然後全部隱藏、等待點擊
 const sceneEl = document.querySelector('a-scene');
 function initialSetup() {
   prepareEntranceLayers();
@@ -459,7 +458,7 @@ if (sceneEl.hasLoaded) {
 const targetEntity = document.querySelector('[mindar-image-target]');
 
 targetEntity.addEventListener('targetFound', () => {
-  clearTimeout(lostTimer); // 追蹤瞬斷又找回來，取消原本排定的重置
+  clearTimeout(lostTimer);
   if (!hasRevealed) {
     showWaitingHint();
   }
@@ -473,29 +472,9 @@ targetEntity.addEventListener('targetLost', () => {
   }, 800);
 });
 
-// 點擊相機畫面（a-scene）才觸發展開，不會誤觸底下的操作面板按鈕
 sceneEl.addEventListener('click', onTapToReveal);
 
-function onTapToReveal() {
-  if (hasRevealed) return;
-  hasRevealed = true;
-  hideWaitingHint();
-  showAllLayers();          // visible 設回 true
-  playEntranceAnimation();  // 沿用你現在已經寫好的版本
-}
-        
-        // 定義分類順序與標題
-const categories = ['eyes', 'hair', 'acc', 'text'];
-const categoryTitles = {
-    'eyes': '👀 眼神',
-    'hair': '💇‍♀️ 髮型',
-    'acc': '🎩 穿搭與配件',
-    'text': '📝 留言版'
-};
-let currentIndex = 0; // 預設停留在第一個分類
-
-// 獨立的分類切換變數
-let currentCatIndex = 0; 
+// === UI 分類切換 ===
 const arCategories = ['eyes', 'hair', 'acc', 'text'];
 const arCategoryTitles = {
     'eyes': '👀 眼神',
@@ -503,35 +482,26 @@ const arCategoryTitles = {
     'acc': '🎩 穿搭與配件',
     'text': '📝 留言版'
 };
+let currentCatIndex = 0;
 
-// 掛載到 window 確保 HTML 裡的 onclick 絕對抓得到
 window.changeCategory = function(direction) {
-    // 1. 計算新的索引值 (循環切換)
     currentCatIndex += direction;
-    
-    // 如果往左按到底，跳回最後一個；如果往右按到底，跳回第一個
     if (currentCatIndex < 0) currentCatIndex = arCategories.length - 1;
     if (currentCatIndex >= arCategories.length) currentCatIndex = 0;
-
     const currentCat = arCategories[currentCatIndex];
-
-    // 2. 更新上方標題
     const titleEl = document.getElementById('category-title');
     if(titleEl) titleEl.innerText = arCategoryTitles[currentCat];
-
-    // 3. 隱藏所有面板
     document.querySelectorAll('.options-panel').forEach(panel => {
         panel.classList.remove('active');
     });
-
-    // 4. 顯示目前選中的面板
     const targetPanel = document.getElementById(`panel-${currentCat}`);
     if (targetPanel) {
         targetPanel.classList.add('active');
     }
 };
-    // 2. 換裝邏輯 (支援快取、不閃爍、不卡死版)
-const layerTokens = {}; // 放在 customize 外面,記錄每個配件類別目前的最新版本號
+
+// === 換裝邏輯 ===
+const layerTokens = {};
 
 window.customize = function(type, imgSrc, btnEl) {
     const targetLayer = document.getElementById(`feature-${type}`);
@@ -542,7 +512,6 @@ window.customize = function(type, imgSrc, btnEl) {
         panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
     }
 
-    // 🔑 每次呼叫都發新號碼牌，讓舊的非同步回呼自動失效
     layerTokens[type] = (layerTokens[type] || 0) + 1;
     const myToken = layerTokens[type];
 
@@ -554,7 +523,7 @@ window.customize = function(type, imgSrc, btnEl) {
 
     if (currentSrc === imgSrc && !isVisible) {
         targetLayer.setAttribute('visible', 'true');
-        bounce(0.08); 
+        bounce(0.08);
         return;
     }
 
@@ -563,7 +532,7 @@ window.customize = function(type, imgSrc, btnEl) {
     targetLayer.setAttribute('visible', 'false');
 
     const revealNextFrame = function () {
-        if (layerTokens[type] !== myToken) return; // 過期的回呼，直接放棄
+        if (layerTokens[type] !== myToken) return;
         requestAnimationFrame(() => {
             if (layerTokens[type] !== myToken) return;
             requestAnimationFrame(() => {
@@ -588,147 +557,43 @@ function bounce(height) {
             dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
         });
     }, 10);
-} 
-
-      // === 登場動畫設定 ===
-// delay 是相對於 targetFound 那一刻的錯開時間(ms)
-// elastic:true 用彈性更大的 easing
-const AR_ENTRANCE_LAYERS = [
-  { id: 'back_wall',            delay: 0 },
-  { id: 'wall-door',            delay: 140 },
-  { id: 'roof-left',            delay: 140 },
-  { id: 'roof-right',           delay: 140 },
-  { id: 'floor-base',           delay: 140 },
-  { id: 'floor-exterior',       delay: 140 },
-  { id: 'left_wall',            delay: 300 },
-  { id: 'wall-left-exterior',   delay: 300 },
-  { id: 'right_wall',           delay: 300 },
-  { id: 'wall-right-exterior',  delay: 300 },
-  { id: 'lamp',                 delay: 460 },
-  { id: 'plant',                delay: 680 },
-  { id: 'sheep-group',          delay: 800, elastic: true }
-];
-
-// 1. 場景載入完成後，把每個圖層的 z 記下來，暫時歸零(貼在卡片上)
-function prepareEntranceLayers() {
-  AR_ENTRANCE_LAYERS.forEach(layer => {
-    const el = document.getElementById(layer.id);
-    if (!el) return;
-    const pos = el.getAttribute('position'); // {x,y,z}
-    el.setAttribute('data-final-x', pos.x);
-    el.setAttribute('data-final-y', pos.y);
-    el.setAttribute('data-final-z', pos.z);
-    el.setAttribute('position', `${pos.x} ${pos.y} 0`);
-  });
 }
 
-// 2. 掃到卡片時，依序把每層 animate 回真正位置
-function playEntranceAnimation() {
-  AR_ENTRANCE_LAYERS.forEach(layer => {
-    const el = document.getElementById(layer.id);
-    if (!el) return;
-    const fx = parseFloat(el.getAttribute('data-final-x'));
-    const fy = parseFloat(el.getAttribute('data-final-y'));
-    const fz = parseFloat(el.getAttribute('data-final-z'));
-    if ([fx, fy, fz].some(Number.isNaN)) {
-      console.warn(`圖層 ${layer.id} 尚未記錄初始位置，跳過進場動畫`);
-      return;
-    }
-
-    const travelDur = layer.elastic ? 650 : 480; // 推移花的時間(感受移動)
-    const settleDur = layer.elastic ? 480 : 300; // 落定回彈花的時間(感受Q彈)
-    // 讓推移段先衝過終點一點點(依z正負決定衝過頭的方向)，才有東西可以彈回來
-    const overshoot = fz === 0 ? 0.06 : fz + (fz > 0 ? 0.06 : -0.06);
-
-    setTimeout(() => {
-      el.setAttribute('animation__slide', {
-        property: 'position',
-        to: `${fx} ${fy} ${overshoot}`,
-        dur: travelDur,
-        easing: 'easeOutCubic'
-      });
-      el.setAttribute('animation__settle', {
-        property: 'position',
-        to: `${fx} ${fy} ${fz}`,
-        dur: settleDur,
-        delay: travelDur, // 接在推移段後面接著播
-        easing: layer.elastic ? 'easeOutElastic' : 'easeOutBack'
-      });
-    }, layer.delay);
-  });
-}
-
-// 3. 綁定事件（修正版：避免 loaded 事件已觸發過但監聽器還沒掛上的競速問題）
-const sceneEl = document.querySelector('a-scene');
-
-if (sceneEl.hasLoaded) {
-  prepareEntranceLayers();
-} else {
-  sceneEl.addEventListener('loaded', prepareEntranceLayers);
-}
-
-const targetEntity = document.querySelector('[mindar-image-target]');
-targetEntity.addEventListener('targetFound', playEntranceAnimation);
-targetEntity.addEventListener('targetLost', prepareEntranceLayers);
-
-// 選用：掃描目標離開視野時歸零，讓下次重新掃到會再演出一次進場動畫
-targetEntity.addEventListener('targetLost', prepareEntranceLayers);
-    // 3. 更新暱稱/留言 (Canvas 轉圖法)
+// === 留言板 ===
 window.updateNickname = function() {
     const inputField = document.getElementById('nameField');
-    const textEl = document.getElementById('layer-text'); 
+    const textEl = document.getElementById('layer-text');
     const canvas = document.getElementById('name-canvas');
 
-    // 防呆機制：確保輸入框、3D 圖層、畫布都存在
     if (textEl && inputField && canvas) {
         const text = inputField.value.trim();
-        
-        // 如果使用者沒打字就按套用，就當作清除
         if (text === "") {
             textEl.setAttribute('visible', 'false');
             return;
         }
 
-        // 🎨 --- Canvas 繪製中文字魔法 ---
         const ctx = canvas.getContext('2d');
-        // 清空畫布 (保持背景透明)
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // 設定文字樣式 (這裡你可以自己改喜歡的顏色喔！)
-        ctx.fillStyle = '#ff7675'; // 填滿顏色 (深粉紅)
-        ctx.font = 'bold 60px sans-serif'; // 字體粗細與大小
+        ctx.fillStyle = '#ff7675';
+        ctx.font = 'bold 60px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
-        // 加上白色邊框，讓字在任何背景下都能看清楚
         ctx.lineWidth = 5;
         ctx.strokeStyle = 'white';
         ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
-        
-        // 畫出文字本體
         ctx.fillText(text, canvas.width / 2, canvas.height / 2);
 
-        // 將畫好的字轉成 PNG 圖片格式
         const dataURL = canvas.toDataURL('image/png');
-        
-        // 套用到 a-image 上並顯示出來
         textEl.setAttribute('src', dataURL);
         textEl.setAttribute('visible', 'true');
-        // -----------------------------
-        
-        // 互動回饋：套用文字時也讓小羊開心跳一下
+
         const sheepGroup = document.getElementById('sheep-group');
         if (sheepGroup) {
-            sheepGroup.removeAttribute('animation__happy'); 
+            sheepGroup.removeAttribute('animation__happy');
             setTimeout(() => {
                 sheepGroup.setAttribute('animation__happy', {
-                    property: 'position',
-                    from: '0 0 0',
-                    to: '0 0.08 0',
-                    dir: 'alternate',
-                    dur: 180,
-                    loop: 2,
-                    easing: 'easeOutQuad'
+                    property: 'position', from: '0 0 0', to: '0 0.08 0',
+                    dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
                 });
             }, 10);
         }
@@ -737,66 +602,53 @@ window.updateNickname = function() {
     }
 };
 
-// 🆕 全新：清除留言功能 (相容圖片模式)
 window.clearNickname = function() {
     const inputField = document.getElementById('nameField');
-    const textEl = document.getElementById('layer-text'); 
-    
-    if (inputField) inputField.value = ''; // 1. 清空手機鍵盤輸入框的字
+    const textEl = document.getElementById('layer-text');
+    if (inputField) inputField.value = '';
     if (textEl) {
-        textEl.removeAttribute('src'); // 清除圖片暫存
-        textEl.setAttribute('visible', 'false'); // 2. 隱藏 3D 畫面上的字
+        textEl.removeAttribute('src');
+        textEl.setAttribute('visible', 'false');
     }
 };
 
-    // 4. 重新打扮 (修復版)
-    function resetAvatar() {
-        // 隱藏並清空所有配件圖層
-        ['eyes', 'hair', 'acc'].forEach(type => {
-            const layer = document.getElementById(`feature-${type}`);
-            if(layer) {
-                layer.removeAttribute('src');
-                layer.setAttribute('visible', 'false');
-            }
-        
-            // 清除按鈕的粉紅色選取狀態
-            const panel = document.getElementById(`panel-${type}`);
-            if(panel) {
-                panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
-            }
+// === 重新打扮 / 拍照模式 ===
+function resetAvatar() {
+    ['eyes', 'hair', 'acc'].forEach(type => {
+        const layer = document.getElementById(`feature-${type}`);
+        if(layer) {
+            layer.removeAttribute('src');
+            layer.setAttribute('visible', 'false');
+        }
+        const panel = document.getElementById(`panel-${type}`);
+        if(panel) {
+            panel.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+        }
+    });
+
+    document.getElementById('nameField').value = "";
+    document.getElementById('layer-text').setAttribute('visible', 'false');
+
+    const sheepGroup = document.getElementById('sheep-group');
+    sheepGroup.removeAttribute('animation__happy');
+    setTimeout(() => {
+        sheepGroup.setAttribute('animation__happy', {
+            property: 'position', from: '0 0 0', to: '0 -0.05 0',
+            dir: 'alternate', dur: 150, loop: 2, easing: 'easeOutQuad'
         });
+    }, 10);
+}
 
-        // 清除留言板文字與輸入框
-        document.getElementById('nameField').value = "";
-        document.getElementById('layer-text').setAttribute('visible', 'false');
-    
-        // 讓小羊往下頓一下表示重置成功
-        const sheepGroup = document.getElementById('sheep-group');
-        sheepGroup.removeAttribute('animation__happy'); 
-        setTimeout(() => {
-            sheepGroup.setAttribute('animation__happy', {
-                property: 'position',
-                from: '0 0 0',
-                to: '0 -0.05 0',
-                dir: 'alternate',
-                dur: 150,
-                loop: 2,
-                easing: 'easeOutQuad'
-            });
-        }, 10);
-    }
+function enterPhotoMode() {
+    document.getElementById('ar-ui').style.display = 'none';
+    setTimeout(() => {
+        document.addEventListener('pointerdown', exitPhotoMode, { once: true });
+    }, 300);
+}
 
-    // 5. 拍照模式
-    function enterPhotoMode() {
-        document.getElementById('ar-ui').style.display = 'none';
-        setTimeout(() => {
-            document.addEventListener('pointerdown', exitPhotoMode, { once: true });
-        }, 300);
-    }
-
-    function exitPhotoMode() {
-        document.getElementById('ar-ui').style.display = 'block';
-    }
+function exitPhotoMode() {
+    document.getElementById('ar-ui').style.display = 'block';
+}
     </script>
 </body>
 </html>
