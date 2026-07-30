@@ -386,20 +386,20 @@ function onTapToReveal() {
 // === 登場動畫設定 ===
 // startZ 沒填就預設 0；牆壁/家具這次改成統一從卡片後方(負值)出發
 const AR_ENTRANCE_LAYERS = [
-  { id: 'back_wall',            delay: 0,   startZ: -0.3 },
-  { id: 'wall-door',            delay: 0,   startZ: -0.3 },
-  { id: 'lamp',                 delay: 0,   startZ: -0.3 },
-  { id: 'plant',                delay: 0,   startZ: -0.3 },
-  { id: 'roof-left',            delay: 0,   startZ: -0.3 },
-  { id: 'roof-right',           delay: 0,   startZ: -0.3 },
-  { id: 'floor-base',           delay: 0,   startZ: -0.3 },
-  { id: 'floor-exterior',       delay: 0,   startZ: -0.3 },
-  { id: 'left_wall',            delay: 0,   startZ: -0.3 },
-  { id: 'wall-left-exterior',   delay: 0,   startZ: -0.3 },
-  { id: 'right_wall',           delay: 0,   startZ: -0.3 },
-  { id: 'wall-right-exterior',  delay: 0,   startZ: -0.3 },
-  { id: 'sheep-group',          delay: 800, elastic: true, startZ: 0 } // 小羊維持原本設計：從卡片前緣(0)出發
-];
+  { id: 'back_wall',            delay: 1080,   startZ: -1 },
+  { id: 'wall-door',            delay: 0,   startZ: -1 },
+  { id: 'lamp',                 delay: 680, elastic: true, startZ: -1 },
+  { id: 'sheep-group',          delay: 800, elastic: true, startZ: -1 },
+  { id: 'plant',                delay: 960, elastic: true, startZ: -1 },
+  { id: 'roof-left',            delay: 2500,   startZ: -1 },
+  { id: 'roof-right',           delay: 2500,   startZ: -1 },
+  { id: 'floor-base',           delay: 2500,   startZ: -1 },
+  { id: 'floor-exterior',       delay: 2500,   startZ: -1 },
+  { id: 'left_wall',            delay: 2500,   startZ: -1 },
+  { id: 'wall-left-exterior',   delay: 2500,   startZ: -1 },
+  { id: 'right_wall',           delay: 2500,   startZ: -1 },
+  { id: 'wall-right-exterior',  delay: 2500,   startZ: -1 },
+  ];
 
 function prepareEntranceLayers() {
   AR_ENTRANCE_LAYERS.forEach(layer => {
