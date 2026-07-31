@@ -387,18 +387,18 @@ function onTapToReveal() {
 // startZ 沒填就預設 0；牆壁/家具這次改成統一從卡片後方(負值)出發
 const AR_ENTRANCE_LAYERS = [
   { id: 'back_wall',            delay: 0,   startZ: 0 },
-  { id: 'wall-door',            delay: 2500,   startZ: 0 },
-  { id: 'lamp',                 delay: 2800, elastic: true, startZ: 0 },
-  { id: 'sheep-group',          delay: 3000, elastic: true, startZ: 0 },
-  { id: 'plant',                delay: 3600, elastic: true, startZ: 0 },
-  { id: 'roof-left',            delay: 2500,   startZ: 0 },
-  { id: 'roof-right',           delay: 2500,   startZ: 0 },
-  { id: 'floor-base',           delay: 2500,   startZ: 0 },
-  { id: 'floor-exterior',       delay: 2500,   startZ: 0 },
-  { id: 'left_wall',            delay: 2500,   startZ: 0 },
-  { id: 'wall-left-exterior',   delay: 2500,   startZ: 0 },
-  { id: 'right_wall',           delay: 2500,   startZ: 0 },
-  { id: 'wall-right-exterior',  delay: 2500,   startZ: 0 },
+  { id: 'wall-door',            delay: 0,   startZ: 0.03 },
+  { id: 'lamp',                 delay: 140, elastic: true, startZ: 0.02 },
+  { id: 'sheep-group',          delay: 140, elastic: true, startZ: 0.021 },
+  { id: 'plant',                delay: 300, elastic: true, startZ: 0.01 },
+  { id: 'roof-left',            delay: 0,   startZ: 0 },
+  { id: 'roof-right',           delay: 0,   startZ: 0 },
+  { id: 'floor-base',           delay: 0,   startZ: 0 },
+  { id: 'floor-exterior',       delay: 0,   startZ: 0 },
+  { id: 'left_wall',            delay: 0,   startZ: 0 },
+  { id: 'wall-left-exterior',   delay: 0,   startZ: 0 },
+  { id: 'right_wall',           delay: 0,   startZ: 0 },
+  { id: 'wall-right-exterior',  delay: 0,   startZ: 0 },
   ];
 
 function prepareEntranceLayers() {
