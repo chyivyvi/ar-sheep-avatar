@@ -555,9 +555,12 @@ function bounce(height) {
     const sheepGroup = document.getElementById('sheep-group');
     if (!sheepGroup) return;
     sheepGroup.removeAttribute('animation__happy');
+    const pos = sheepGroup.getAttribute('position'); // 讀取「當下」實際位置，而不是假設是原點
     setTimeout(() => {
         sheepGroup.setAttribute('animation__happy', {
-            property: 'position', from: '0 0 0', to: `0 ${height} 0`,
+            property: 'position',
+            from: `${pos.x} ${pos.y} ${pos.z}`,
+            to: `${pos.x} ${pos.y + height} ${pos.z}`,
             dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
         });
     }, 10);
@@ -596,7 +599,9 @@ window.updateNickname = function() {
             sheepGroup.removeAttribute('animation__happy');
             setTimeout(() => {
                 sheepGroup.setAttribute('animation__happy', {
-                    property: 'position', from: '0 0 0', to: '0 0.08 0',
+                    property: 'position',
+                    from: `${pos.x} ${pos.y} ${pos.z}`,
+                    to: `${pos.x} ${pos.y + 0.08} ${pos.z}`,
                     dir: 'alternate', dur: 180, loop: 2, easing: 'easeOutQuad'
                 });
             }, 10);
@@ -637,7 +642,9 @@ function resetAvatar() {
     sheepGroup.removeAttribute('animation__happy');
     setTimeout(() => {
         sheepGroup.setAttribute('animation__happy', {
-            property: 'position', from: '0 0 0', to: '0 -0.05 0',
+            property: 'position',
+            from: `${pos.x} ${pos.y} ${pos.z}`,
+            to: `${pos.x} ${pos.y - 0.05} ${pos.z}`,
             dir: 'alternate', dur: 150, loop: 2, easing: 'easeOutQuad'
         });
     }, 10);
