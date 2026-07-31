@@ -597,6 +597,7 @@ window.updateNickname = function() {
         const sheepGroup = document.getElementById('sheep-group');
         if (sheepGroup) {
             sheepGroup.removeAttribute('animation__happy');
+            const pos = sheepGroup.getAttribute('position');    
             setTimeout(() => {
                 sheepGroup.setAttribute('animation__happy', {
                     property: 'position',
@@ -640,6 +641,7 @@ function resetAvatar() {
 
     const sheepGroup = document.getElementById('sheep-group');
     sheepGroup.removeAttribute('animation__happy');
+    const pos = sheepGroup.getAttribute('position'); 
     setTimeout(() => {
         sheepGroup.setAttribute('animation__happy', {
             property: 'position',
