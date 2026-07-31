@@ -384,33 +384,35 @@ function onTapToReveal() {
 }
 
 // === 登場動畫設定 ===
-// startZ 沒填就預設 0；牆壁/家具這次改成統一從卡片後方(負值)出發
 const AR_ENTRANCE_LAYERS = [
-  { id: 'back_wall',            delay: 0,   startZ: 0 },
-  { id: 'wall-door',            delay: 0,   startZ: 0.03 },
-  { id: 'lamp',                 delay: 140, elastic: true, startZ: 0.02 },
-  { id: 'sheep-group',          delay: 140, elastic: true, startZ: 0.021 },
-  { id: 'plant',                delay: 300, elastic: true, startZ: 0.01 },
-  { id: 'roof-left',            delay: 0,   startZ: 0 },
-  { id: 'roof-right',           delay: 0,   startZ: 0 },
-  { id: 'floor-base',           delay: 0,   startZ: 0 },
-  { id: 'floor-exterior',       delay: 0,   startZ: 0 },
-  { id: 'left_wall',            delay: 0,   startZ: 0 },
-  { id: 'wall-left-exterior',   delay: 0,   startZ: 0 },
-  { id: 'right_wall',           delay: 0,   startZ: 0 },
-  { id: 'wall-right-exterior',  delay: 0,   startZ: 0 },
-  ];
+  { id: 'back_wall',            delay: 0,   offset: 0.15 },
+  { id: 'wall-door',            delay: 0,   offset: 0.15 },
+  { id: 'lamp',                 delay: 140, elastic: true, offset: 0.15 },
+  { id: 'sheep-group',          delay: 140, elastic: true, offset: 0.15 },
+  { id: 'plant',                delay: 300, elastic: true, offset: 0.15 },
+  { id: 'roof-left',            delay: 0,   offset: 0.15 },
+  { id: 'roof-right',           delay: 0,   offset: 0.15 },
+  { id: 'floor-base',           delay: 0,   offset: 0.15 },
+  { id: 'floor-exterior',       delay: 0,   offset: 0.15 },
+  { id: 'left_wall',            delay: 0,   offset: 0.15 },
+  { id: 'wall-left-exterior',   delay: 0,   offset: 0.15 },
+  { id: 'right_wall',           delay: 0,   offset: 0.15 },
+  { id: 'wall-right-exterior',  delay: 0,   offset: 0.15 },
+];
 
 function prepareEntranceLayers() {
   AR_ENTRANCE_LAYERS.forEach(layer => {
     const el = document.getElementById(layer.id);
     if (!el) return;
     const pos = el.getAttribute('position');
-    const startZ = layer.startZ !== undefined ? layer.startZ : 0;
+    const finalZ = parseFloat(pos.z);
+    const offset = layer.offset !== undefined ? layer.offset : 0.15;
+    const startZ = finalZ - offset; // 從「自己的最終深度」往後退一小段，而不是全部擠到同一個絕對值
+
     el.setAttribute('data-final-x', pos.x);
     el.setAttribute('data-final-y', pos.y);
     el.setAttribute('data-final-z', pos.z);
-    el.setAttribute('data-start-z', startZ);       // 記錄真正的起點，等一下算方向要用
+    el.setAttribute('data-start-z', startZ);
     el.setAttribute('position', `${pos.x} ${pos.y} ${startZ}`);
   });
 }
